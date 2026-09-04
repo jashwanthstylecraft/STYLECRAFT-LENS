@@ -432,39 +432,44 @@ export const GTM_FIELD_SCHEMA: GtmField[] = [
   // derives from this automatically). SHARED — the real beauty template has
   // its own "CUSTOMIZABLE PARTS / Qty / Colors" rows with identical labels
   // (confirmed via inspection), so this section is not family-tagged.
-  field("lids_qty", "Lids / Customizable Parts", "Qty"),
-  field("lids_colors", "Lids / Customizable Parts", "Colors"),
+  // legacyOptional (see the Axis Shield comment further down for the full
+  // rationale) — these are manual-fill-only fields now (INTERNAL_FIELD_IDS
+  // above), so an unfilled one is hidden from the UI/completion-% entirely
+  // rather than always showing an empty "Awaiting Internal Input" row;
+  // filling one in for real still shows/counts it normally.
+  field("lids_qty", "Lids / Customizable Parts", "Qty", { legacyOptional: true }),
+  field("lids_colors", "Lids / Customizable Parts", "Colors", { legacyOptional: true }),
 
   // Lever — real barber template section; absent from beauty.
-  field("lever_type", "Lever", "Type", { family: "clipper_trimmer_shaver" }),
-  field("lever_qty", "Lever", "Qty", { family: "clipper_trimmer_shaver" }),
-  field("lever_color", "Lever", "Color", { family: "clipper_trimmer_shaver" }),
+  field("lever_type", "Lever", "Type", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
+  field("lever_qty", "Lever", "Qty", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
+  field("lever_color", "Lever", "Color", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
 
   // Guards — real barber template section; absent from beauty.
-  field("guards_type", "Guards", "Type", { family: "clipper_trimmer_shaver" }),
-  field("guards_qty", "Guards", "Qty", { family: "clipper_trimmer_shaver" }),
-  field("guards_color", "Guards", "Color", { family: "clipper_trimmer_shaver" }),
+  field("guards_type", "Guards", "Type", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
+  field("guards_qty", "Guards", "Qty", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
+  field("guards_color", "Guards", "Color", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
 
   // Charging — real barber template section; absent from beauty (beauty's
   // own electrical facts live under Electrical & Power above instead).
-  field("charging_light_color", "Charging", "Light Color", { family: "clipper_trimmer_shaver" }),
-  field("charging_base_color", "Charging", "Base Color", { family: "clipper_trimmer_shaver" }),
-  field("charging_cord_color", "Charging", "Cord Color", { family: "clipper_trimmer_shaver" }),
-  field("charging_cord_length", "Charging", "Cord Length", { family: "clipper_trimmer_shaver" }),
-  field("charging_port", "Charging", "Charging Port", { family: "clipper_trimmer_shaver" }),
-  field("charging_voltage", "Charging", "Voltage", { family: "clipper_trimmer_shaver" }),
-  field("charging_logo_color", "Charging", "Logo Color", { family: "clipper_trimmer_shaver" }),
-  field("charging_led_function", "Charging", "LED Function", { family: "clipper_trimmer_shaver" }),
+  field("charging_light_color", "Charging", "Light Color", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
+  field("charging_base_color", "Charging", "Base Color", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
+  field("charging_cord_color", "Charging", "Cord Color", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
+  field("charging_cord_length", "Charging", "Cord Length", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
+  field("charging_port", "Charging", "Charging Port", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
+  field("charging_voltage", "Charging", "Voltage", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
+  field("charging_logo_color", "Charging", "Logo Color", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
+  field("charging_led_function", "Charging", "LED Function", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
 
   // Included in Box — the hand-tailored barber-specific accessory fields
   // below (screwdriver/cam follower/cleaning brush/oil bottle — clipper
   // servicing accessories) are family-tagged; the real beauty template's
   // own Included in Box block has its own different items instead (Travel
   // Bag/Case, Heat Glove, Extra Filters, attachments list — added below).
-  field("screw_driver_color", "Included in Box", "Screw Driver Color", { family: "clipper_trimmer_shaver" }),
-  field("screw_driver_brand", "Included in Box", "Screw Driver Brand", { family: "clipper_trimmer_shaver" }),
-  field("screw_driver_other", "Included in Box", "Screw Driver Other", { family: "clipper_trimmer_shaver" }),
-  field("stretch_bracket_color", "Included in Box", "Stretch Bracket Color", { family: "clipper_trimmer_shaver" }),
+  field("screw_driver_color", "Included in Box", "Screw Driver Color", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
+  field("screw_driver_brand", "Included in Box", "Screw Driver Brand", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
+  field("screw_driver_other", "Included in Box", "Screw Driver Other", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
+  field("stretch_bracket_color", "Included in Box", "Stretch Bracket Color", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
   // legacyOptional — the official GTM workbook template has zero Axis
   // Shield rows (confirmed against the real file); still generated
   // normally when a product genuinely has real data, but hidden from the
@@ -473,19 +478,19 @@ export const GTM_FIELD_SCHEMA: GtmField[] = [
   field("axis_shield_color", "Included in Box", "Axis Shield Color", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
   field("axis_shield_material", "Included in Box", "Axis Shield Material", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
   field("axis_shield_description", "Included in Box", "Axis Shield Description", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
-  field("cam_follower_qty", "Included in Box", "Cam Follower Qty", { family: "clipper_trimmer_shaver" }),
-  field("cam_follower_color", "Included in Box", "Cam Follower Color", { family: "clipper_trimmer_shaver" }),
-  field("cleaning_brush_qty", "Included in Box", "Cleaning Brush Qty", { family: "clipper_trimmer_shaver" }),
-  field("cleaning_brush_color", "Included in Box", "Cleaning Brush Color", { family: "clipper_trimmer_shaver" }),
-  field("oil_bottle_qty", "Included in Box", "Oil Bottle Qty", { family: "clipper_trimmer_shaver" }),
-  field("extra_screws_qty", "Included in Box", "Extra Screws Qty", { family: "clipper_trimmer_shaver" }),
-  field("extra_screws_color", "Included in Box", "Extra Screws Color", { family: "clipper_trimmer_shaver" }),
+  field("cam_follower_qty", "Included in Box", "Cam Follower Qty", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
+  field("cam_follower_color", "Included in Box", "Cam Follower Color", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
+  field("cleaning_brush_qty", "Included in Box", "Cleaning Brush Qty", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
+  field("cleaning_brush_color", "Included in Box", "Cleaning Brush Color", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
+  field("oil_bottle_qty", "Included in Box", "Oil Bottle Qty", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
+  field("extra_screws_qty", "Included in Box", "Extra Screws Qty", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
+  field("extra_screws_color", "Included in Box", "Extra Screws Color", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
   // Real beauty template's own Included in Box items (confirmed via
   // inspection) — absent from barber.
-  field("travel_bag_case", "Included in Box", "Travel Bag/Case", { family: "beauty" }),
-  field("heat_glove", "Included in Box", "Heat Glove", { family: "beauty" }),
-  field("extra_filters", "Included in Box", "Extra Filters", { family: "beauty" }),
-  field("attachments_list", "Included in Box", "Attachments", { family: "beauty" }),
+  field("travel_bag_case", "Included in Box", "Travel Bag/Case", { legacyOptional: true, family: "beauty" }),
+  field("heat_glove", "Included in Box", "Heat Glove", { legacyOptional: true, family: "beauty" }),
+  field("extra_filters", "Included in Box", "Extra Filters", { legacyOptional: true, family: "beauty" }),
+  field("attachments_list", "Included in Box", "Attachments", { legacyOptional: true, family: "beauty" }),
   // Generic aggregate from Amazon's whats_in_the_box[] — kept alongside the
   // hand-tailored fields above (which are precise per-component slots for
   // this catalog's clipper products) rather than folded into them, since a
