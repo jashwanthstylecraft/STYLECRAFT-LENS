@@ -22,7 +22,7 @@ function assert(condition: boolean, message: string) {
 }
 
 async function main() {
-  const { GTM_FIELD_SCHEMA, INTERNAL_FIELD_IDS } = await import("../lib/gtm-field-schema");
+  const { GTM_FIELD_SCHEMA, INTERNAL_FIELD_IDS, visibleGtmSchema } = await import("../lib/gtm-field-schema");
   const { structurallyInapplicableFieldIds, matchesFieldOptions } = await import("../lib/gtm-generate");
   const { deriveFieldsFromSources } = await import("../lib/gtm-derive");
   const { filterTrailingEmptyGroupRows } = await import("../lib/gtm-group-fields");
@@ -114,6 +114,17 @@ async function main() {
 
   const allEmpty = filterTrailingEmptyGroupRows(groupSchema, () => null);
   assert(allEmpty.filter(f => f.id.startsWith("g_")).map(f => f.id).join(",") === "g_1", "an entirely-unfilled group still keeps row 1 (never invisible)");
+
+  // ---- Section 5b: visibleGtmSchema — legacyOptional hiding treats every
+  // system placeholder as "unfilled", not just a bare empty string/"N/A" ----
+  console.log("\n[5b] visibleGtmSchema — legacyOptional field hiding");
+  const optionalField = [{ id: "lever_color", section: "Lever", question: "Color", legacyOptional: true }];
+  assert(visibleGtmSchema(optionalField, {}).length === 0, "a legacyOptional field with no stored answer at all is hidden");
+  assert(visibleGtmSchema(optionalField, { lever_color: { answer: "" } }).length === 0, "a legacyOptional field with a bare empty-string answer is hidden");
+  assert(visibleGtmSchema(optionalField, { lever_color: { answer: "N/A" } }).length === 0, "a legacyOptional field answered 'N/A' is hidden");
+  assert(visibleGtmSchema(optionalField, { lever_color: { answer: "Awaiting internal input" } }).length === 0, "a legacyOptional field still sitting on the internal-kind placeholder is hidden");
+  assert(visibleGtmSchema(optionalField, { lever_color: { answer: "Not found — pre-launch: no web presence to search" } }).length === 0, "a legacyOptional field sitting on a 'Not found —' system placeholder is hidden, not treated as real data");
+  assert(visibleGtmSchema(optionalField, { lever_color: { answer: "Red" } }).length === 1, "a legacyOptional field with a genuine real answer is shown");
 
   // ---- Section 6: format checks ----
   console.log("\n[6] hasCapsLead / hasExactSpecValue");

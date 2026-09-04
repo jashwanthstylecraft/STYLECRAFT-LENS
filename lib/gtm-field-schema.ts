@@ -5,6 +5,7 @@
 // the UI grid (ProductKnowledgeSection in
 // app/(app)/dashboard/projects/[id]/page.tsx) — every consumer must iterate
 // this list, never hardcode the field count or IDs elsewhere.
+import { isRealAnswer } from "./field-answer-state";
 
 export type GtmFieldKind = "grounded" | "written" | "internal";
 
@@ -586,8 +587,13 @@ export function visibleGtmSchema<T extends { id: string; legacyOptional?: boolea
   return schema.filter(f => {
     if (f.family && resolvedFamily && f.family !== resolvedFamily) return false;
     if (!f.legacyOptional) return true;
-    const answer = (fields[f.id]?.answer ?? "").toString().trim();
-    return answer !== "" && answer.toUpperCase() !== "N/A";
+    // isRealAnswer, not a bare empty/N/A check — a legacyOptional field can
+    // easily be sitting on a system placeholder (e.g. "Not found —
+    // pre-launch: ...", "Awaiting internal input") from before it was ever
+    // marked legacyOptional (or from a run that genuinely couldn't resolve
+    // it), and none of those represent a real answer worth showing/counting
+    // any more than a bare empty string does.
+    return isRealAnswer(fields[f.id]?.answer);
   });
 }
 
