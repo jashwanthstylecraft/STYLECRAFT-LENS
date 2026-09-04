@@ -1610,8 +1610,8 @@ const OWNER_OPTIONS = ["Product Marketing", "Marketing", "Sales", "Legal", "Ops"
 const GTM_GROUP_LABELS: Record<string, string> = {
   features_full_list: "Features (full list)",
   cross_sell: "Cross Sell Products",
-  top_6_features: "Top 6 Features in Priority Order",
-  feature_icons: "6 Icons for the Features",
+  top_6_features: "Top Features in Priority Order",
+  feature_icons: "Icons for the Features",
   faq_question: "FAQ Questions",
   faq_answer: "FAQ Answers",
   box_feature: "Box Features (6 Max)",

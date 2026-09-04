@@ -18,8 +18,8 @@ import type { CatalogProductRow } from "./db/catalog-products";
 const GROUNDED_FACT_FIELD_IDS = [
   "product_title", "positioning_statement", "reason_to_buy", "core_consumer", "material", "hair_type",
   "warranty", "care_directions",
-  ...Array.from({ length: 10 }, (_, i) => `features_full_list_${i + 1}`),
-  ...Array.from({ length: 6 }, (_, i) => `top_6_features_${i + 1}`),
+  ...Array.from({ length: 5 }, (_, i) => `features_full_list_${i + 1}`),
+  ...Array.from({ length: 5 }, (_, i) => `top_6_features_${i + 1}`),
   "motor_type", "motor_rpm", "motor_run_time", "motor_recharge_time", "motor_speed", "motor_noise_level",
   "blade_name", "fixed_blade", "cutting_blade",
 ];

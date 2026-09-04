@@ -42,19 +42,19 @@ async function main() {
   assert(!!byId.get("motor_recharge_time"), "new motor_recharge_time field exists");
 
   assert(!byId.has("features_full_list"), "old single features_full_list field is gone");
-  const featureRows = Array.from({ length: 10 }, (_, i) => byId.get(`features_full_list_${i + 1}`));
-  assert(featureRows.every(Boolean), "features_full_list_1..10 all exist");
-  assert(featureRows.every(f => f?.group?.id === "features_full_list" && f?.group?.total === 10), "every features_full_list row carries correct group metadata");
+  const featureRows = Array.from({ length: 5 }, (_, i) => byId.get(`features_full_list_${i + 1}`));
+  assert(featureRows.every(Boolean), "features_full_list_1..5 all exist");
+  assert(featureRows.every(f => f?.group?.id === "features_full_list" && f?.group?.total === 5), "every features_full_list row carries correct group metadata");
 
   assert(!byId.has("top_6_features"), "old single top_6_features field is gone");
-  assert(Array.from({ length: 6 }, (_, i) => byId.get(`top_6_features_${i + 1}`)).every(Boolean), "top_6_features_1..6 all exist");
+  assert(Array.from({ length: 5 }, (_, i) => byId.get(`top_6_features_${i + 1}`)).every(Boolean), "top_6_features_1..5 all exist");
 
   assert(!byId.has("feature_icons"), "old single feature_icons field is gone");
-  assert(Array.from({ length: 6 }, (_, i) => byId.get(`feature_icons_${i + 1}`)).every(Boolean), "feature_icons_1..6 all exist");
+  assert(Array.from({ length: 5 }, (_, i) => byId.get(`feature_icons_${i + 1}`)).every(Boolean), "feature_icons_1..5 all exist");
 
   assert(!byId.has("upsell_cross_sell"), "old upsell_cross_sell field is gone");
   assert(byId.get("up_sell")?.kind === "written", "new up_sell field exists and is written-kind");
-  assert(Array.from({ length: 5 }, (_, i) => byId.get(`cross_sell_${i + 1}`)).every(Boolean), "cross_sell_1..5 all exist");
+  assert(Array.from({ length: 2 }, (_, i) => byId.get(`cross_sell_${i + 1}`)).every(Boolean), "cross_sell_1..2 all exist");
 
   assert(!!byId.get("comps_buying_guide") && byId.get("comps_buying_guide")?.uiControl === undefined, "comps_buying_guide is revived as a plain link/text field (no special uiControl)");
   assert(!!byId.get("comparison_chart_web_only")?.uiControl, "comparison_chart_web_only (picker) is untouched");

@@ -65,7 +65,7 @@ const GROUNDED_FACT_FIELD_IDS = [
   "positioning_statement", "core_consumer", "reason_to_buy",
   "our_differentiators", "selling_position",
   "rep_talking_point_1", "rep_talking_point_2", "rep_talking_point_3",
-  ...Array.from({ length: 10 }, (_, i) => `features_full_list_${i + 1}`),
+  ...Array.from({ length: 5 }, (_, i) => `features_full_list_${i + 1}`),
   "motor_type", "motor_rpm", "motor_run_time", "motor_recharge_time", "motor_speed", "motor_noise_level",
   "blade_name", "fixed_blade", "cutting_blade",
 ];

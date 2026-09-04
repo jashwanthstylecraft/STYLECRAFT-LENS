@@ -135,10 +135,10 @@ export function deriveFieldsFromSources(
   set("core_consumer", pick(project.targetMarket ? CORE_CONSUMER_LABELS[project.targetMarket] : null, "project_record"));
   set("positioning_statement", pick(ca.positioning_recommendation, "active_report"));
   set("approved_pricing", firstOf([project.pricePoint, "project_record"], [t.approved_pricing, "tds"], [pricing.price_positioning, "active_report"]));
-  // features_full_list is now a 10-row group (features_full_list_1..10) —
+  // features_full_list is now a 5-row group (features_full_list_1..5) —
   // its 3-source merge deriver lives in lib/gtm-features-and-tip.ts's
   // deriveFeaturesFullList, run as an async Tier 6.5 step, not here.
-  // up_sell/cross_sell_1..5 have no structured source today — left for AI/N/A.
+  // up_sell/cross_sell_1..2 have no structured source today — left for AI/N/A.
   set("reason_to_buy", firstOf([salesKit?.elevator_pitch, "sales_kit"], [project.keyDiff, "project_record"]));
   set("warranty", pick(t.warranty, "tds"));
   set("certification_needed", pick(t.certification_needed, "tds"));
@@ -158,7 +158,7 @@ export function deriveFieldsFromSources(
 
   // Tool Description
   set("material", pick(t.material, "tds"));
-  setGroup("top_6_features", (salesKit?.key_features || []).slice(0, 6).map((f: any) => f.headline).filter(Boolean), "sales_kit");
+  setGroup("top_6_features", (salesKit?.key_features || []).slice(0, 5).map((f: any) => f.headline).filter(Boolean), "sales_kit");
   set("care_directions", pick(t.care_directions, "tds"));
   set("product_description", pick(t.product_description, "tds"));
 

@@ -20,7 +20,7 @@ import { listToolTypes } from "./db/tool-types";
 // the spec's own input list (compatibility is covered by blades/guards,
 // "who it's for" by core_consumer, already folded into the prompt itself).
 const GROUNDED_FACT_FIELD_IDS = [
-  ...Array.from({ length: 10 }, (_, i) => `features_full_list_${i + 1}`),
+  ...Array.from({ length: 5 }, (_, i) => `features_full_list_${i + 1}`),
   "core_consumer",
   "motor_type", "motor_rpm", "motor_run_time", "motor_recharge_time", "motor_speed", "motor_noise_level",
   "blade_name", "fixed_blade", "cutting_blade",
@@ -94,7 +94,7 @@ async function callFaqGeneration(
   retryInstruction?: string,
   family?: "clipper_trimmer_shaver" | "beauty"
 ): Promise<FaqPair[]> {
-  const systemInstruction = `Write 10 consumer FAQs for ${productName}. Cover, at minimum: ${faqCoverageTopics(family)}. Answers: 2-4 sentences, factual, grounded ONLY in the facts below. Each question must read like a real customer question.
+  const systemInstruction = `Write 3 consumer FAQs for ${productName}. Cover, at minimum: ${faqCoverageTopics(family)}. Answers: 2-4 sentences, factual, grounded ONLY in the facts below. Each question must read like a real customer question.
 
 FACTS:
 ${factsBlock}
@@ -103,10 +103,10 @@ CATEGORY REVIEW THEMES (for framing differentiation questions only — never sta
 ${reviewThemes.length ? reviewThemes.join("; ") : "(none available)"}
 ${retryInstruction ? `\n${retryInstruction}` : ""}
 
-Return ONLY valid JSON: { "faqs": [{ "question": "...", "answer": "..." }] } — exactly 10 entries.${voiceBlock}\n${getToneDirective("support")}${tdsGroundingBlock}`;
+Return ONLY valid JSON: { "faqs": [{ "question": "...", "answer": "..." }] } — exactly 3 entries.${voiceBlock}\n${getToneDirective("support")}${tdsGroundingBlock}`;
 
   const raw = await callAiForJson<{ faqs?: FaqPair[] }>(systemInstruction, `Product: ${productName}`, "GTM-ProductFAQs", { timeoutMs: 30_000 });
-  return (raw?.faqs || []).filter(f => f && typeof f.question === "string" && typeof f.answer === "string").slice(0, 10);
+  return (raw?.faqs || []).filter(f => f && typeof f.question === "string" && typeof f.answer === "string").slice(0, 3);
 }
 
 async function deriveDifferentiatorsAndTalkingPoints(

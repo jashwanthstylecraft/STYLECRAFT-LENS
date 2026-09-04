@@ -85,10 +85,10 @@ function buildCompetitorRows(report: any): CompetitorRow[] {
   }));
 }
 
-const TOP_6_FEATURES_GROUP_SIZE = 6;
+const TOP_6_FEATURES_GROUP_SIZE = 5;
 
-// top_6_features became a 6-row repeatable group in GTM Schema v3
-// (top_6_features_1..6, see lib/gtm-field-schema.ts) — joins whichever
+// top_6_features became a 5-row repeatable group in GTM Schema v3
+// (top_6_features_1..5, see lib/gtm-field-schema.ts) — joins whichever
 // rows have real content into one bulleted block for the deck's
 // feature_list token, same "stop at the first empty row" trim as the
 // CSV/PDF exports (lib/gtm-group-fields.ts).

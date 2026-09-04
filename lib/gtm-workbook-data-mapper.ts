@@ -13,7 +13,7 @@
 // cursor walks forward through that order, which is what disambiguates a
 // label reused across sections (Lids/Lever/Guards all have their own
 // "Qty"/"Type"/"Color" row) without ever hardcoding a row number.
-import { isRealAnswer } from "./field-answer-state";
+import { isRealAnswer, isAwaitingInternalInput } from "./field-answer-state";
 import {
   openGtmWorkbook,
   generateGtmWorkbookBuffer,
@@ -58,6 +58,13 @@ export interface GtmWorkbookRenderResult {
 
 function answerOf(fields: WorkbookFields, id: string): string {
   const v = fields[id]?.answer;
+  // An unresolved "internal"-kind field (e.g. Lids/Lever/Guards/Charging/
+  // Included in Box — real ops/packaging decisions generation never
+  // guesses at) is written as the literal "Awaiting internal input" answer
+  // so the in-app UI can show its own chip/owner — but that literal string
+  // has no business appearing as cell text in the exported workbook. Leave
+  // the cell genuinely blank instead, ready for direct manual entry.
+  if (isAwaitingInternalInput(v)) return "";
   return isRealAnswer(v) ? v!.trim() : (v ?? "").trim();
 }
 
@@ -93,9 +100,9 @@ const PRODUCT_KNOWLEDGE_STEPS: Step[] = [
   { kind: "field", label: "Good Better Best -Lineup", fieldId: "good_better_best" },
   { kind: "field", label: "Good Better Best -Performance", fieldId: "good_better_best_performance" },
   { kind: "field", label: "Hair Type", fieldId: "hair_type" },
-  { kind: "group", label: "Features (full list)", fieldIdPrefix: "features_full_list", total: 10, offset: 0 },
+  { kind: "group", label: "Features (full list)", fieldIdPrefix: "features_full_list", total: 5, offset: 0 },
   { kind: "field", label: "Up-sell (Sales play opportunity)", fieldId: "up_sell" },
-  { kind: "combinedRow", label: "Cross Sell Products", fieldIds: Array.from({ length: 5 }, (_, i) => `cross_sell_${i + 1}`) },
+  { kind: "combinedRow", label: "Cross Sell Products", fieldIds: Array.from({ length: 2 }, (_, i) => `cross_sell_${i + 1}`) },
   { kind: "field", label: "Reason to Buy", fieldId: "reason_to_buy" },
   { kind: "field", label: "Expert Tip", fieldId: "expert_tip" },
   { kind: "field", label: "Comparison Chart WEB ONLY", fieldId: "comparison_chart_web_only", writeNotes: false },
@@ -115,8 +122,8 @@ const PRODUCT_KNOWLEDGE_STEPS: Step[] = [
   { kind: "field", label: "Pallets High", fieldId: "pallets_high" },
   { kind: "field", label: "Product Title", fieldId: "product_title" },
   { kind: "field", label: "Material", fieldId: "material" },
-  { kind: "group", label: "Top 6 Features in Priority Order", fieldIdPrefix: "top_6_features", total: 6, offset: 0 },
-  { kind: "group", label: "6 Icons for the Features", fieldIdPrefix: "feature_icons", total: 6, offset: 0 },
+  { kind: "group", label: "Top 6 Features in Priority Order", fieldIdPrefix: "top_6_features", total: 5, offset: 0 },
+  { kind: "group", label: "6 Icons for the Features", fieldIdPrefix: "feature_icons", total: 5, offset: 0 },
   { kind: "field", label: "Care Directions", fieldId: "care_directions" },
   { kind: "field", label: "Motor Type", fieldId: "motor_type" },
   { kind: "field", label: "RPM", fieldId: "motor_rpm" },
@@ -185,9 +192,9 @@ const PRODUCT_KNOWLEDGE_STEPS_BEAUTY: Step[] = [
   { kind: "field", label: "Good Better Best -Lineup", fieldId: "good_better_best" },
   { kind: "field", label: "Good Better Best -Performance", fieldId: "good_better_best_performance" },
   { kind: "field", label: "Hair Type", fieldId: "hair_type" },
-  { kind: "group", label: "Features (full list)", fieldIdPrefix: "features_full_list", total: 10, offset: 0 },
+  { kind: "group", label: "Features (full list)", fieldIdPrefix: "features_full_list", total: 5, offset: 0 },
   { kind: "field", label: "Up-sell (Sales play opportunity)", fieldId: "up_sell" },
-  { kind: "combinedRow", label: "Cross Sell Products", fieldIds: Array.from({ length: 5 }, (_, i) => `cross_sell_${i + 1}`) },
+  { kind: "combinedRow", label: "Cross Sell Products", fieldIds: Array.from({ length: 2 }, (_, i) => `cross_sell_${i + 1}`) },
   { kind: "field", label: "Reason to Buy", fieldId: "reason_to_buy" },
   { kind: "field", label: "Expert Tip", fieldId: "expert_tip" },
   { kind: "field", label: "Comparison Chart WEB ONLY", fieldId: "comparison_chart_web_only", writeNotes: false },
@@ -212,8 +219,8 @@ const PRODUCT_KNOWLEDGE_STEPS_BEAUTY: Step[] = [
   { kind: "field", label: "Pallets High", fieldId: "pallets_high" },
   { kind: "field", label: "Product Title", fieldId: "product_title" },
   { kind: "field", label: "Material", fieldId: "material" },
-  { kind: "group", label: "Top 6 Features in Priority Order", fieldIdPrefix: "top_6_features", total: 6, offset: 0 },
-  { kind: "group", label: "6 Icons for the Features", fieldIdPrefix: "feature_icons", total: 6, offset: 0 },
+  { kind: "group", label: "Top 6 Features in Priority Order", fieldIdPrefix: "top_6_features", total: 5, offset: 0 },
+  { kind: "group", label: "6 Icons for the Features", fieldIdPrefix: "feature_icons", total: 5, offset: 0 },
   { kind: "field", label: "Care Directions", fieldId: "care_directions" },
   // ---- Beauty-only suffix (confirmed via live inspection; no barber
   // equivalent past this point) ----
@@ -274,7 +281,7 @@ const BOX_ONLY_STEPS: Step[] = [
   { kind: "field", label: "Collection Name", fieldId: "box_collection_name" },
   { kind: "field", label: "Main Statement", fieldId: "box_main_statement" },
   { kind: "group", label: "Features (6 Max)", fieldIdPrefix: "box_feature", total: 6, offset: 1 },
-  { kind: "group", label: "Icons (6 Max)", fieldIdPrefix: "feature_icons", total: 6, offset: 1 },
+  { kind: "group", label: "Icons (6 Max)", fieldIdPrefix: "feature_icons", total: 5, offset: 1 },
   { kind: "field", label: "UPC", fieldId: "box_upc" },
   { kind: "field", label: "Warranty", fieldId: "warranty" },
   { kind: "field", label: "Includes", fieldId: "included_summary" },
@@ -302,7 +309,7 @@ const BOX_ONLY_STEPS_BEAUTY: Step[] = [
   { kind: "field", label: "Product Description", fieldId: "product_description" },
   { kind: "field", label: "Main Statement", fieldId: "box_main_statement" },
   { kind: "group", label: "Features (6 Max)", fieldIdPrefix: "box_feature", total: 6, offset: 1 },
-  { kind: "group", label: "Icons (6 Max)", fieldIdPrefix: "feature_icons", total: 6, offset: 1 },
+  { kind: "group", label: "Icons (6 Max)", fieldIdPrefix: "feature_icons", total: 5, offset: 1 },
   { kind: "group", label: "Consumer Facing Feature Bullets - LONG", fieldIdPrefix: "bullet_long", total: 6, offset: 0 },
   { kind: "field", label: "Includes", fieldId: "included_summary" },
   { kind: "field", label: "UPC", fieldId: "box_upc" },
@@ -496,7 +503,7 @@ function supplyBoxOnlyFields(input: GtmWorkbookMapperInput): WorkbookFields {
   };
 }
 
-const FAQ_PAIR_COUNT = 10;
+const FAQ_PAIR_COUNT = 3;
 const FAQ_LAST_TEMPLATE_TRIAD_END_ROW = 12; // rows 4/5/6, 7/8/9, 10/11/12 — 3rd pair's blank row
 
 function applyProductTitleHeaderSku(fields: WorkbookFields, headerSku: string | null): WorkbookFields {
@@ -533,8 +540,10 @@ export function renderGtmWorkbook(templateBuffer: Buffer, input: GtmWorkbookMapp
   // is needed here.
   applySteps(workbook, "Final Copy", "A", "C", "D", FINAL_COPY_STEPS, input.fields, repairs, unmapped);
 
-  // Product FAQ needs its 3 existing Q:/A:/blank triads grown to 10 BEFORE
-  // any label search runs (row numbers below the growth point shift).
+  // Product FAQ's template already has exactly FAQ_PAIR_COUNT (3)
+  // pre-built Q:/A:/blank triads, so no row growth is needed anymore —
+  // this insertion step is now a no-op in practice, kept so a future
+  // increase to FAQ_PAIR_COUNT still grows the sheet correctly.
   const faqXmlBeforeInsert = workbook.getSheetXml("Product FAQ");
   const existingQRows = findAllRowsByLabel(faqXmlBeforeInsert, workbook.sharedStrings, "A", "Q:");
   const newPairsNeeded = Math.max(0, FAQ_PAIR_COUNT - existingQRows.length);

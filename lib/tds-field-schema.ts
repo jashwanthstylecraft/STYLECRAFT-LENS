@@ -20,10 +20,11 @@ export interface TdsField {
   id: string;
   section: string;
   question: string;
-  // Inherited from the matching GTM field where one exists (all "internal"
-  // ids are REUSED_GTM_FIELD_IDS below, so every internal TDS field has a
-  // GTM counterpart to inherit from) — TDS-only fields default to
-  // "grounded" since none of them are internal-decision fields.
+  // Inherited from the matching GTM field where one exists, EXCEPT
+  // TDS_KEEPS_GROUNDED_IDS below (real spec facts that legitimately appear
+  // in a scraped listing even though GTM treats them as internal-only) —
+  // TDS-only fields default to "grounded" since none of them are
+  // internal-decision fields.
   kind: GtmFieldKind;
   owner?: string;
 }
@@ -65,6 +66,29 @@ const REUSED_GTM_FIELD_IDS = [
 
 const gtmById = new Map(GTM_FIELD_SCHEMA.map(f => [f.id, f]));
 
+// Lids/Lever/Guards/Charging/hand-tailored Included in Box became
+// "internal"-kind on the GTM side (real ops/packaging specs — see
+// lib/gtm-field-schema.ts's INTERNAL_FIELD_IDS) so GTM's own AI/web-search
+// tier stops guessing at them, letting a human fill them in directly.
+// TDS's relationship to these same ids is different: TDS never "guesses" —
+// it only ever scrapes the real product-page/Amazon-listing content or
+// says "Not listed" — and this exact info (guard comb sizes, lever color,
+// charger port type, what ships in the box) commonly IS present in a real
+// listing. Blindly inheriting GTM's "internal" kind here would silently
+// stop TDS from scraping real, genuinely-findable spec data for no reason
+// tied to TDS at all — so these ids are pinned back to "grounded" for TDS
+// specifically, overriding whatever GTM_FIELD_SCHEMA currently says.
+const TDS_KEEPS_GROUNDED_IDS = new Set([
+  "lids_qty", "lids_colors",
+  "lever_type", "lever_qty", "lever_color",
+  "guards_type", "guards_qty", "guards_color",
+  "charging_light_color", "charging_base_color", "charging_cord_color", "charging_cord_length", "charging_port", "charging_voltage", "charging_logo_color", "charging_led_function",
+  "screw_driver_color", "screw_driver_brand", "screw_driver_other", "stretch_bracket_color",
+  "axis_shield_qty", "axis_shield_color", "axis_shield_material", "axis_shield_description",
+  "cam_follower_qty", "cam_follower_color", "cleaning_brush_qty", "cleaning_brush_color",
+  "oil_bottle_qty", "extra_screws_qty", "extra_screws_color",
+]);
+
 // Fields that only exist on the TDS (no GTM counterpart).
 const TDS_ONLY_FIELDS: TdsField[] = [
   field("model_number", "General", "Model Number"),
@@ -76,7 +100,9 @@ export const TDS_FIELD_SCHEMA: TdsField[] = [
   ...REUSED_GTM_FIELD_IDS.map(id => {
     const f = gtmById.get(id);
     if (!f) throw new Error(`TDS_FIELD_SCHEMA: "${id}" no longer exists in GTM_FIELD_SCHEMA`);
-    return { id: f.id, section: f.section, question: f.question, kind: f.kind, owner: f.owner };
+    const kind = TDS_KEEPS_GROUNDED_IDS.has(id) ? "grounded" : f.kind;
+    const owner = kind === "internal" ? f.owner : undefined;
+    return { id: f.id, section: f.section, question: f.question, kind, owner };
   }),
   ...TDS_ONLY_FIELDS,
 ];

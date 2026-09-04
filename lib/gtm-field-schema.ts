@@ -130,7 +130,7 @@ const WRITTEN_FIELD_IDS = new Set([
   "marketing_print_material",
   "marketing_trade_show_launch",
 ]);
-for (let i = 1; i <= 10; i++) {
+for (let i = 1; i <= 3; i++) {
   WRITTEN_FIELD_IDS.add(`faq_question_${i}`);
   WRITTEN_FIELD_IDS.add(`faq_answer_${i}`);
 }
@@ -163,6 +163,53 @@ export const INTERNAL_FIELD_IDS = new Set([
   "marketing_external_sales_rep_sampling",
   "marketing_key_accounts_sampling",
   "marketing_promo",
+  // Lids / Customizable Parts, Lever, Guards, Charging, and the hand-
+  // tailored Included in Box accessory rows — real packaging/hardware specs
+  // that only Ops actually knows (guard comb sizes, lever color, charger
+  // port type, which accessories genuinely ship in the box), never
+  // something AI/web search should guess. Moved from "grounded" to
+  // "internal" so generation never attempts them and they surface as
+  // "Awaiting Internal Input" in-app (see INTERNAL_FIELD_OWNERS below) —
+  // exported blank in the GTM workbook, ready for direct manual entry (see
+  // lib/gtm-workbook-data-mapper.ts's answerOf). whats_in_box_list (a real
+  // Amazon "what's in the box" fact) and included_summary (a pure
+  // derivation of these same fields, already zero-AI) are deliberately left
+  // out — they aren't guesses, so there's nothing to stop guessing.
+  "lids_qty",
+  "lids_colors",
+  "lever_type",
+  "lever_qty",
+  "lever_color",
+  "guards_type",
+  "guards_qty",
+  "guards_color",
+  "charging_light_color",
+  "charging_base_color",
+  "charging_cord_color",
+  "charging_cord_length",
+  "charging_port",
+  "charging_voltage",
+  "charging_logo_color",
+  "charging_led_function",
+  "screw_driver_color",
+  "screw_driver_brand",
+  "screw_driver_other",
+  "stretch_bracket_color",
+  "axis_shield_qty",
+  "axis_shield_color",
+  "axis_shield_material",
+  "axis_shield_description",
+  "cam_follower_qty",
+  "cam_follower_color",
+  "cleaning_brush_qty",
+  "cleaning_brush_color",
+  "oil_bottle_qty",
+  "extra_screws_qty",
+  "extra_screws_color",
+  "travel_bag_case",
+  "heat_glove",
+  "extra_filters",
+  "attachments_list",
 ]);
 
 const INTERNAL_FIELD_OWNERS: Record<string, string> = {
@@ -183,6 +230,41 @@ const INTERNAL_FIELD_OWNERS: Record<string, string> = {
   marketing_external_sales_rep_sampling: "Marketing",
   marketing_key_accounts_sampling: "Marketing",
   marketing_promo: "Marketing",
+  lids_qty: "Ops",
+  lids_colors: "Ops",
+  lever_type: "Ops",
+  lever_qty: "Ops",
+  lever_color: "Ops",
+  guards_type: "Ops",
+  guards_qty: "Ops",
+  guards_color: "Ops",
+  charging_light_color: "Ops",
+  charging_base_color: "Ops",
+  charging_cord_color: "Ops",
+  charging_cord_length: "Ops",
+  charging_port: "Ops",
+  charging_voltage: "Ops",
+  charging_logo_color: "Ops",
+  charging_led_function: "Ops",
+  screw_driver_color: "Ops",
+  screw_driver_brand: "Ops",
+  screw_driver_other: "Ops",
+  stretch_bracket_color: "Ops",
+  axis_shield_qty: "Ops",
+  axis_shield_color: "Ops",
+  axis_shield_material: "Ops",
+  axis_shield_description: "Ops",
+  cam_follower_qty: "Ops",
+  cam_follower_color: "Ops",
+  cleaning_brush_qty: "Ops",
+  cleaning_brush_color: "Ops",
+  oil_bottle_qty: "Ops",
+  extra_screws_qty: "Ops",
+  extra_screws_color: "Ops",
+  travel_bag_case: "Ops",
+  heat_glove: "Ops",
+  extra_filters: "Ops",
+  attachments_list: "Ops",
 };
 
 interface FieldExtra {
@@ -231,9 +313,9 @@ export const GTM_FIELD_SCHEMA: GtmField[] = [
   field("good_better_best", "General", "Good Better Best (Lineup)"),
   field("good_better_best_performance", "General", "Good Better Best (Performance)"),
   field("hair_type", "General", "Hair Type"),
-  ...groupFields("features_full_list", "General", "Feature", 10),
+  ...groupFields("features_full_list", "General", "Feature", 5),
   field("up_sell", "General", "Up-sell (Sales play opportunity)"),
-  ...groupFields("cross_sell", "General", "Cross Sell Product", 5),
+  ...groupFields("cross_sell", "General", "Cross Sell Product", 2),
   field("reason_to_buy", "General", "Reason to Buy (Unique Selling Points)"),
   field("expert_tip", "General", "Expert Tip"),
   field("comparison_chart_web_only", "General", "Comparison Chart WEB ONLY", {
@@ -267,8 +349,8 @@ export const GTM_FIELD_SCHEMA: GtmField[] = [
   // as its own GTM field, since it's not part of the 76-item inventory.
   field("product_title", "Tool Description", "Product Title"),
   field("material", "Tool Description", "Material"),
-  ...groupFields("top_6_features", "Tool Description", "Top Feature", 6),
-  ...groupFields("feature_icons", "Tool Description", "Icon", 6),
+  ...groupFields("top_6_features", "Tool Description", "Top Feature", 5),
+  ...groupFields("feature_icons", "Tool Description", "Icon", 5),
   field("care_directions", "Tool Description", "Care Directions"),
   // Grounded (verbatim from the Amazon listing), not written — see kind
   // classification above. Deliberately excluded from WRITTEN_FIELD_IDS.
@@ -455,8 +537,8 @@ export const GTM_FIELD_SCHEMA: GtmField[] = [
   // Product FAQ — generated automatically after GTM's own fields resolve
   // (new "faqs" pipeline phase, lib/gtm-product-faqs.ts), matching the
   // official GTM workbook template's "Product FAQ" tab.
-  ...groupFields("faq_question", "Product FAQ", "Q", 10),
-  ...groupFields("faq_answer", "Product FAQ", "A", 10),
+  ...groupFields("faq_question", "Product FAQ", "Q", 3),
+  ...groupFields("faq_answer", "Product FAQ", "A", 3),
   field("our_differentiators", "Product FAQ", "Our Differentiators"),
   field("selling_position", "Product FAQ", "Selling Position"),
   field("rep_talking_point_1", "Product FAQ", "Rep Talking Point 1"),

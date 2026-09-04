@@ -23,8 +23,8 @@ export const DECK_TOKEN_REGISTRY: Record<string, RegistryEntry> = {
   positioning_statement: { kind: "text",  source: { type: "gtm_field", field_id: "positioning_statement" } },
   product_name_origin:   { kind: "text",  source: { type: "gtm_field", field_id: "product_name_origin" } },
   why_creating_item:     { kind: "text",  source: { type: "gtm_field", field_id: "why_creating_item" } },
-  // top_6_features became a 6-row repeatable group in GTM Schema v3
-  // (top_6_features_1..6) — joined here rather than pointed at a single
+  // top_6_features became a 5-row repeatable group in GTM Schema v3
+  // (top_6_features_1..5) — joined here rather than pointed at a single
   // now-nonexistent field id.
   feature_list:          { kind: "text",  source: { type: "computed", name: "feature_list" } },
   spec_highlights:       { kind: "text",  source: { type: "computed", name: "spec_highlights" } },

@@ -139,13 +139,13 @@ function buildSyntheticFields(): Record<string, { answer: string; notes?: string
     marketing_key_accounts_sampling: a("All"),
     marketing_promo: a("Potentially promo with the Anime Clipper."),
   };
-  for (let i = 1; i <= 10; i++) fields[`features_full_list_${i}`] = a(i <= 4 ? `ZERO-GAP PRECISION FEATURE ${i}` : "");
-  for (let i = 1; i <= 5; i++) fields[`cross_sell_${i}`] = a(i <= 2 ? `Cross sell product ${i}` : "");
-  for (let i = 1; i <= 6; i++) fields[`top_6_features_${i}`] = a(`Top feature ${i}`);
-  for (let i = 1; i <= 6; i++) fields[`feature_icons_${i}`] = a(`ICON ${i}`);
+  for (let i = 1; i <= 5; i++) fields[`features_full_list_${i}`] = a(i <= 4 ? `ZERO-GAP PRECISION FEATURE ${i}` : "");
+  for (let i = 1; i <= 2; i++) fields[`cross_sell_${i}`] = a(`Cross sell product ${i}`);
+  for (let i = 1; i <= 5; i++) fields[`top_6_features_${i}`] = a(`Top feature ${i}`);
+  for (let i = 1; i <= 5; i++) fields[`feature_icons_${i}`] = a(`ICON ${i}`);
   for (let i = 1; i <= 6; i++) fields[`box_feature_${i}`] = a(`Box feature ${i}`);
-  for (let i = 1; i <= 10; i++) fields[`faq_question_${i}`] = a(`Question ${i}: how do I use it?`);
-  for (let i = 1; i <= 10; i++) fields[`faq_answer_${i}`] = a(`Answer ${i}: use it like this.`);
+  for (let i = 1; i <= 3; i++) fields[`faq_question_${i}`] = a(`Question ${i}: how do I use it?`);
+  for (let i = 1; i <= 3; i++) fields[`faq_answer_${i}`] = a(`Answer ${i}: use it like this.`);
   return fields;
 }
 
@@ -194,7 +194,7 @@ async function main() {
   const templateBuffer = fs.readFileSync(FIXTURE_PATH);
 
   // ---- Section 1: Export fixture ----
-  console.log("\n[1] Export fixture — mapped values land correctly, other tabs untouched, no #REF!, 10 Q/A pairs, multi-line wraps");
+  console.log("\n[1] Export fixture — mapped values land correctly, other tabs untouched, no #REF!, 3 Q/A pairs, multi-line wraps");
 
   const summary = parseGtmWorkbookTemplate(templateBuffer);
   assert(summary.missingRequiredSheets.length === 0, "the real template has all 3 required sheets (Product Knowledge/BOX ONLY/Product FAQ)");
@@ -218,6 +218,9 @@ async function main() {
   assert(readCellText(pk, outWorkbook.sharedStrings, "C95") === "1 (assembled on unit)", "Cam Follower Qty lands correctly despite the template's own 'Qtr' label typo");
   assert(readCellText(pk, outWorkbook.sharedStrings, "D27").startsWith("Example:"), "Comparison Chart WEB ONLY's helper example Notes text is left untouched, never overwritten");
 
+  const dielineRow = findRowByLabel(pk, outWorkbook.sharedStrings, "A", "Dieline");
+  assert(!!dielineRow && readCellText(pk, outWorkbook.sharedStrings, `C${dielineRow}`) === "", "an unresolved internal-kind field (Dieline, seeded as the literal 'Awaiting internal input' placeholder) exports as a genuinely blank cell, not the placeholder text");
+
   const multilineCell = pk.match(/<c r="C13"[^>]*(?:\/>|>[\s\S]*?<\/c>)/);
   assert(!!multilineCell && /\ss="\d+"/.test(multilineCell[0]), "a written cell keeps its original style attribute (wrap/font/border untouched)");
 
@@ -240,9 +243,9 @@ async function main() {
 
   const qRows = findAllRowsByLabel(faq, outWorkbook.sharedStrings, "A", "Q:");
   const aRows = findAllRowsByLabel(faq, outWorkbook.sharedStrings, "A", "A:");
-  assert(qRows.length === 10 && aRows.length === 10, `exactly 10 Q:/A: pairs exist after row insertion (got ${qRows.length} Q, ${aRows.length} A)`);
-  assert(readCellText(faq, outWorkbook.sharedStrings, `B${qRows[9]}`) === "Question 10: how do I use it?", "the 10th (inserted) FAQ question lands correctly");
-  assert(readCellText(faq, outWorkbook.sharedStrings, `B${aRows[9]}`) === "Answer 10: use it like this.", "the 10th (inserted) FAQ answer lands correctly");
+  assert(qRows.length === 3 && aRows.length === 3, `exactly 3 Q:/A: pairs exist (got ${qRows.length} Q, ${aRows.length} A)`);
+  assert(readCellText(faq, outWorkbook.sharedStrings, `B${qRows[2]}`) === "Question 3: how do I use it?", "the 3rd FAQ question lands correctly");
+  assert(readCellText(faq, outWorkbook.sharedStrings, `B${aRows[2]}`) === "Answer 3: use it like this.", "the 3rd FAQ answer lands correctly");
   const differentiatorsRow = findRowByLabel(faq, outWorkbook.sharedStrings, "A", "Our Differrentiators");
   assert(!!differentiatorsRow && readCellText(faq, outWorkbook.sharedStrings, `B${differentiatorsRow + 1}`).includes("Quieter than category average"), "Our Differentiators lands on the row below its own header label");
 

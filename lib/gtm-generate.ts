@@ -292,11 +292,7 @@ REQUIRED DEPTH for these specific fields (this describes FORMAT AND DEPTH ONLY �
 - up_sell: one selling-motion paragraph naming a specific premium companion/step-up option and a price-framing or recurring-revenue hook (e.g. a replacement-part subscription) — never a generic "upgrade for more value" line.
 - reason_to_buy: 5-6 numbered claims, each starting with a short ALL-CAPS claim phrase followed by the supporting spec and a plain-language benefit (e.g. "ZERO-GAP PRECISION — 7,800rpm brushless motor cuts closer without snagging").
 - expert_tip: 2-4 sentences of concrete, actionable usage/maintenance advice tied to this product's real features; for an accessory/replacement-part product (no motor of its own), frame it as a usage-context tip for the tool it attaches to, not a fabricated feature of the accessory itself.
-- features_full_list_1..10 (each row is one feature): CAPS-lead phrase + exact spec value/unit, adding an "INCLUDES: ..." clause when the feature bundles a real included accessory.
-- screw_driver_brand: the real branded tool name if the sources name one (e.g. "S|C Pro"), never a generic "included screwdriver".
-- charging_led_function: a behavior-line description of what each LED state means (e.g. "Blinks red while charging, solid green when fully charged"), not just a color list.
-- guards_type: include real measurement breakdowns per guard when the sources give them (e.g. "Small comb: 2mm, 3mm; Large comb: 4mm, 5mm").
-- axis_shield_description / cam_follower_qty: note when a part ships pre-assembled on the unit (e.g. "2 (1 assembled)"), matching how these are actually packaged.
+- features_full_list_1..5 (each row is one feature): CAPS-lead phrase + exact spec value/unit, adding an "INCLUDES: ..." clause when the feature bundles a real included accessory.
 Simple fields (good_better_best, warranty, certification_needed, etc.) stay short and exact — do not pad these with filler.
 
 FIELD SCHEMA (id [section] (grounded|written): question):

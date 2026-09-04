@@ -2,9 +2,9 @@
 // GTM workbook export work, Part 4 — Box Only section: Main Statement
 // (<=15 words, distilled from the already-resolved Positioning Statement)
 // and 6 box-length feature condensations (<=12 words each, condensed from
-// the already-resolved Top 6 Features). Both grounded-only (no new
-// claims), run as a Tier-6.5-style step gated on unresolved — same pattern
-// as lib/gtm-features-and-tip.ts's applyFeaturesAndExpertTip.
+// the already-resolved Top Features in Priority Order). Both grounded-only
+// (no new claims), run as a Tier-6.5-style step gated on unresolved — same
+// pattern as lib/gtm-features-and-tip.ts's applyFeaturesAndExpertTip.
 import { callAiForJson } from "./ai-json-call";
 import { GtmField, GtmFieldAnswer } from "./gtm-field-schema";
 import { isRealAnswer } from "./field-answer-state";
@@ -43,9 +43,9 @@ async function generateBoxFeatures(
   tdsGroundingBlock: string = "",
   retryInstruction?: string
 ): Promise<string[]> {
-  const systemInstruction = `Condense each of these Top 6 Features for "${productName}" into a box-length bullet, at most 12 words each, grounded only in the feature text below — no new claims, keep the real spec value if the feature has one.
+  const systemInstruction = `Condense each of these Top Features for "${productName}" into a box-length bullet, at most 12 words each, grounded only in the feature text below — no new claims, keep the real spec value if the feature has one.
 
-TOP 6 FEATURES:
+TOP FEATURES:
 ${topFeatures.map((f, i) => `${i + 1}. ${f}`).join("\n")}
 ${retryInstruction ? `\n${retryInstruction}` : ""}
 
@@ -90,7 +90,7 @@ async function deriveBoxFeatures(
   if (!wantsBoxFeatures) return;
 
   const topFeatures: string[] = [];
-  for (let i = 1; i <= 6; i++) {
+  for (let i = 1; i <= 5; i++) {
     const answer = fields[`top_6_features_${i}`]?.answer;
     if (isRealAnswer(answer)) topFeatures.push(answer!);
   }
