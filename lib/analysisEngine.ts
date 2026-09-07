@@ -2771,7 +2771,7 @@ export async function runAnalysisStep(analysisId: string): Promise<AnalysisStepR
           const round1ExtraInstruction = [correctionsGuidance, relatedProductsDiscoveryContext].filter(Boolean).join("\n\n") || undefined;
           const aiResult: any = await withAiFallback(
             "Phase 1",
-            hasGeminiKey ? () => executePhase1Gemini(context, identityCard, targetPriceRaw, onSearchUsed, toolTypes, ourMotorLabel, round1ExtraInstruction, primaryCriterion) : null,
+            hasGeminiKey ? () => executePhase1Gemini(context, identityCard, targetPriceRaw, onSearchUsed, toolTypes, ourMotorLabel, round1ExtraInstruction, primaryCriterion, startTime) : null,
             hasOpenAIKey ? () => executePhase1OpenAI(context, identityCard, targetPriceRaw, onSearchUsed, toolTypes, ourMotorLabel, round1ExtraInstruction, primaryCriterion, startTime) : null,
             () => generateMockPhase1(context, identityCard, targetPriceRaw, toolTypes),
             startTime
@@ -2796,7 +2796,7 @@ export async function runAnalysisStep(analysisId: string): Promise<AnalysisStepR
         const extraInstruction = [fillRoundExtraInstruction(fill.round, "legacy"), correctionsGuidance, relatedProductsDiscoveryContext].filter(Boolean).join("\n\n");
         const aiResult: any = await withAiFallback(
           `Phase 1 (fill round ${fill.round})`,
-          hasGeminiKey ? () => executePhase1Gemini(context, identityCard, targetPriceRaw, onSearchUsed, toolTypes, ourMotorLabel, extraInstruction, primaryCriterion) : null,
+          hasGeminiKey ? () => executePhase1Gemini(context, identityCard, targetPriceRaw, onSearchUsed, toolTypes, ourMotorLabel, extraInstruction, primaryCriterion, startTime) : null,
           hasOpenAIKey ? () => executePhase1OpenAI(context, identityCard, targetPriceRaw, onSearchUsed, toolTypes, ourMotorLabel, extraInstruction, primaryCriterion, startTime) : null,
           () => generateMockPhase1(context, identityCard, targetPriceRaw, toolTypes),
           startTime
@@ -2993,7 +2993,7 @@ export async function runAnalysisStep(analysisId: string): Promise<AnalysisStepR
         const extraInstruction = [fill.round === 1 ? null : fillRoundExtraInstruction(fill.round, "emerging"), correctionsGuidance, relatedProductsDiscoveryContext].filter(Boolean).join("\n\n") || undefined;
         const result: any = await withAiFallback(
           fill.round === 1 ? "Phase 2" : `Phase 2 (fill round ${fill.round})`,
-          hasGeminiKey ? () => executePhase2Gemini(context, identityCard, targetPriceRaw, onSearchUsed, toolTypes, brandHintOverride, ourMotorLabel, extraInstruction, primaryCriterion) : null,
+          hasGeminiKey ? () => executePhase2Gemini(context, identityCard, targetPriceRaw, onSearchUsed, toolTypes, brandHintOverride, ourMotorLabel, extraInstruction, primaryCriterion, startTime) : null,
           hasOpenAIKey ? () => executePhase2OpenAI(context, identityCard, targetPriceRaw, onSearchUsed, toolTypes, brandHintOverride, ourMotorLabel, extraInstruction, primaryCriterion, startTime) : null,
           () => generateMockPhase2(context, identityCard, targetPriceRaw, toolTypes, phase1Result),
           startTime
@@ -3250,7 +3250,7 @@ export async function runAnalysisStep(analysisId: string): Promise<AnalysisStepR
 
       const result: any = await withAiFallback(
         "Phase 3",
-        hasGeminiKey ? () => executePhase3Gemini(context, identityCard, phase1Result, phase2Result, onSearchUsed) : null,
+        hasGeminiKey ? () => executePhase3Gemini(context, identityCard, phase1Result, phase2Result, onSearchUsed, undefined, startTime) : null,
         hasOpenAIKey ? () => executePhase3OpenAI(context, identityCard, phase1Result, phase2Result, onSearchUsed, undefined, startTime) : null,
         () => generateMockPhase3(context, identityCard, phase1Result, phase2Result),
         startTime
@@ -3294,7 +3294,7 @@ export async function runAnalysisStep(analysisId: string): Promise<AnalysisStepR
               const extraInstruction = `The draft was generic. Rewrite strictly about ${identityCard.subcategory} using these specific competitor facts: ${facts.join("; ") || "the competitor data above"}.`;
               const retried = hasOpenAIKey
                 ? await executePhase3OpenAI(context, identityCard, phase1Result, phase2Result, onSearchUsed, extraInstruction, startTime)
-                : await executePhase3Gemini(context, identityCard, phase1Result, phase2Result, onSearchUsed, extraInstruction);
+                : await executePhase3Gemini(context, identityCard, phase1Result, phase2Result, onSearchUsed, extraInstruction, startTime);
               if (retried && typeof retried.positioning_recommendation === "string") {
                 result = retried;
               }
@@ -4270,28 +4270,53 @@ export function isGeminiQuotaExhausted(err: any): boolean {
   return message.includes("RESOURCE_EXHAUSTED") || message.includes('"code":429');
 }
 
+// withDeadline is already defined above (bounds a single async operation to
+// a hard wall-clock deadline) — reused here rather than duplicated.
+const GEMINI_DEADLINE_TIMEOUT = Symbol("gemini-deadline-timeout");
+
 // Google Search grounding has its own quota separate from plain generation —
 // it can be exhausted while plain calls still work fine. Retry ungrounded
 // (no live search, but still real AI reasoning) before giving up on Gemini
 // entirely and falling through to OpenAI/mock — UNLESS the failure is a
 // quota exhaustion, which the ungrounded retry can't route around.
+//
+// Confirmed live (matches the exact "Connection dropped — retrying" symptom
+// documented above ROUTE_TIME_BUDGET_MS): withAiFallback's own
+// remainingMs < MIN_VIABLE_GEMINI_ATTEMPT_MS gate only decides whether to
+// ATTEMPT Gemini at all — once attempted, neither the grounded call nor the
+// ungrounded retry had any actual deadline, so a slow-but-not-erroring
+// Gemini response (or, worse, both the grounded AND ungrounded attempts
+// back to back) could still run past whatever budget was left and take the
+// whole route down with it, exactly like lib/product-identification.ts's
+// Phase 0 bug before its own fix. routeStartTime threads the same shared
+// clock every other AI call in this file already uses (see
+// effectiveOpenAiWebSearchTimeoutMs) so this can never happen again here.
 async function generateWithGeminiFallback(
   systemPrompt: string,
   userPrompt: string,
-  onSearchUsed: (query: string) => void
+  onSearchUsed: (query: string) => void,
+  routeStartTime: number = Date.now()
 ): Promise<string> {
+  const remainingForGrounded = ROUTE_TIME_BUDGET_MS - (Date.now() - routeStartTime);
   try {
-    const response = await genAI.models.generateContent({
-      model: GEMINI_MODEL,
-      contents: userPrompt,
-      config: {
-        systemInstruction: systemPrompt,
-        tools: [{ googleSearch: {} }],
-        maxOutputTokens: 8192,
-      },
-    });
+    const response: any = await withDeadline<any>(
+      genAI.models.generateContent({
+        model: GEMINI_MODEL,
+        contents: userPrompt,
+        config: {
+          systemInstruction: systemPrompt,
+          tools: [{ googleSearch: {} }],
+          maxOutputTokens: 8192,
+        },
+      }),
+      remainingForGrounded,
+      GEMINI_DEADLINE_TIMEOUT
+    );
+    if (response === GEMINI_DEADLINE_TIMEOUT) {
+      throw new Error(`Gemini grounded call exceeded the route's remaining time budget (${Math.round(remainingForGrounded / 1000)}s) — treating as a failure rather than waiting further`);
+    }
     const queries = response.candidates?.[0]?.groundingMetadata?.webSearchQueries || [];
-    queries.forEach((q) => onSearchUsed(q));
+    queries.forEach((q: string) => onSearchUsed(q));
     if (!response.text) {
       throw new Error(`Empty response (finishReason: ${response.candidates?.[0]?.finishReason})`);
     }
@@ -4301,19 +4326,31 @@ async function generateWithGeminiFallback(
       console.warn("Gemini call failed with quota exhaustion — skipping the ungrounded retry, it would fail the same way:", err?.message || err);
       throw err;
     }
+    const remainingForUngrounded = ROUTE_TIME_BUDGET_MS - (Date.now() - routeStartTime);
+    if (remainingForUngrounded < MIN_VIABLE_GEMINI_ATTEMPT_MS) {
+      console.warn(`Gemini grounded call failed and only ${Math.round(remainingForUngrounded / 1000)}s remain in the route's time budget — skipping the ungrounded retry rather than risking another slow call:`, err?.message || err);
+      throw err;
+    }
     console.warn("Gemini call with Google Search grounding failed, retrying ungrounded:", err?.message || err);
     // The prompt tells the model it has web search — without the tool
     // actually attached, it tries to call it anyway and produces a
     // MALFORMED_FUNCTION_CALL. Override that instruction for this attempt.
     const ungroundedSystemPrompt = `${systemPrompt}\n\nIMPORTANT: Web search is temporarily unavailable for this request. Do NOT attempt to call any search tool. Answer using your own trained knowledge instead, and still return the exact JSON schema requested.`;
-    const response = await genAI.models.generateContent({
-      model: GEMINI_MODEL,
-      contents: userPrompt,
-      config: {
-        systemInstruction: ungroundedSystemPrompt,
-        maxOutputTokens: 8192,
-      },
-    });
+    const response: any = await withDeadline<any>(
+      genAI.models.generateContent({
+        model: GEMINI_MODEL,
+        contents: userPrompt,
+        config: {
+          systemInstruction: ungroundedSystemPrompt,
+          maxOutputTokens: 8192,
+        },
+      }),
+      remainingForUngrounded,
+      GEMINI_DEADLINE_TIMEOUT
+    );
+    if (response === GEMINI_DEADLINE_TIMEOUT) {
+      throw new Error(`Gemini ungrounded retry exceeded the route's remaining time budget (${Math.round(remainingForUngrounded / 1000)}s) — treating as a failure rather than waiting further`);
+    }
     if (!response.text) {
       throw new Error(`Empty ungrounded response (finishReason: ${response.candidates?.[0]?.finishReason})`);
     }
@@ -4535,9 +4572,9 @@ Instructions:
   return { systemPrompt, userPrompt };
 }
 
-async function executePhase1Gemini(context: AnalysisContext, identity: IdentityCard, targetPriceRaw: number, onSearchUsed: (query: string) => void, toolTypes: ToolTypeRow[], ourMotorLabel?: string | null, extraInstruction?: string, primaryCriterion: "motor" | "heat_technology" | "none" = "motor") {
+async function executePhase1Gemini(context: AnalysisContext, identity: IdentityCard, targetPriceRaw: number, onSearchUsed: (query: string) => void, toolTypes: ToolTypeRow[], ourMotorLabel?: string | null, extraInstruction?: string, primaryCriterion: "motor" | "heat_technology" | "none" = "motor", routeStartTime: number = Date.now()) {
   const { systemPrompt, userPrompt } = buildPhase1Prompt(context, identity, targetPriceRaw, toolTypes, ourMotorLabel, extraInstruction, primaryCriterion);
-  const text = await generateWithGeminiFallback(systemPrompt, userPrompt, onSearchUsed);
+  const text = await generateWithGeminiFallback(systemPrompt, userPrompt, onSearchUsed, routeStartTime);
   return assertHasCompetitors(JSON.parse(cleanJsonString(text)));
 }
 
@@ -4654,9 +4691,9 @@ Instructions:
   return { systemPrompt, userPrompt };
 }
 
-async function executePhase2Gemini(context: AnalysisContext, identity: IdentityCard, targetPriceRaw: number, onSearchUsed: (query: string) => void, toolTypes: ToolTypeRow[], brandHintOverride?: string[] | null, ourMotorLabel?: string | null, extraInstruction?: string, primaryCriterion: "motor" | "heat_technology" | "none" = "motor") {
+async function executePhase2Gemini(context: AnalysisContext, identity: IdentityCard, targetPriceRaw: number, onSearchUsed: (query: string) => void, toolTypes: ToolTypeRow[], brandHintOverride?: string[] | null, ourMotorLabel?: string | null, extraInstruction?: string, primaryCriterion: "motor" | "heat_technology" | "none" = "motor", routeStartTime: number = Date.now()) {
   const { systemPrompt, userPrompt } = buildPhase2Prompt(context, identity, targetPriceRaw, toolTypes, brandHintOverride, ourMotorLabel, extraInstruction, primaryCriterion);
-  const text = await generateWithGeminiFallback(systemPrompt, userPrompt, onSearchUsed);
+  const text = await generateWithGeminiFallback(systemPrompt, userPrompt, onSearchUsed, routeStartTime);
   return assertHasCompetitors(JSON.parse(cleanJsonString(text)));
 }
 
@@ -4667,14 +4704,14 @@ async function executePhase2OpenAI(context: AnalysisContext, identity: IdentityC
   return assertHasCompetitors(JSON.parse(cleanJsonString(text)));
 }
 
-async function executePhase3Gemini(context: AnalysisContext, identity: IdentityCard, phase1: any, phase2: any, onSearchUsed: (query: string) => void, extraInstruction?: string) {
+async function executePhase3Gemini(context: AnalysisContext, identity: IdentityCard, phase1: any, phase2: any, onSearchUsed: (query: string) => void, extraInstruction?: string, routeStartTime: number = Date.now()) {
   const { systemPrompt, userPrompt } = await buildPhase3Prompt(context, identity, phase1, phase2, extraInstruction);
 
   let usedAnyQuery = false;
   const text = await generateWithGeminiFallback(systemPrompt, userPrompt, (q) => {
     usedAnyQuery = true;
     onSearchUsed(q);
-  });
+  }, routeStartTime);
   if (!usedAnyQuery) {
     onSearchUsed(`${identity.subcategory || identity.category} market data lookup`);
   }
