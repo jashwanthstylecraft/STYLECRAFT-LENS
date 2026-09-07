@@ -3,11 +3,22 @@ import { GoogleGenAI } from "@google/genai";
 const apiKey = process.env.GEMINI_API_KEY || "";
 
 // A flag to check if the user has provided a real key or if we are in mock/demo mode.
+// TEMPORARILY forced false — the configured GEMINI_API_KEY has expired, so
+// every Gemini call was failing anyway, just after wasting real request time
+// finding that out first (this string-shape check can't detect an expired
+// key, only a missing/placeholder one — that only surfaces as a real auth
+// error at call time). Every caller across the app (analysis Phase 0-3
+// fallback, GTM/TDS/artwork generation, report rewrite) is already written
+// to gracefully fall through to its next tier when hasGeminiKey is false, so
+// this one flag correctly routes everything straight to OpenAI/its own
+// next fallback instead of stalling on a doomed Gemini attempt first.
+// Remove the `&& false` below once a real, current GEMINI_API_KEY is set.
 export const hasGeminiKey =
   !!apiKey &&
   apiKey !== "" &&
   !apiKey.includes("your-gemini") &&
-  !apiKey.includes("xxxx");
+  !apiKey.includes("xxxx") &&
+  false;
 
 // Broad-audit finding — every Gemini call in this codebase (8 call sites)
 // had NO timeout at all. Confirmed by reading the SDK's own source
