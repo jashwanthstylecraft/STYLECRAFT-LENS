@@ -1,11 +1,13 @@
 // lib/gtm-style-exemplars.ts
-// GTM style corpus — literal (not paraphrased) excerpts from 4 real, approved
+// GTM style corpus — literal (not paraphrased) excerpts from real, approved
 // GTM Product Knowledge documents: Homie Clipper (SC628B), Homie Shaver
-// (SC817B), Homie Shaver Replacement Foil (SC559B), and the SC x 360 Jeezy
-// Trimmer (SC423B). These describe OTHER, already-shipped products — they
-// exist here purely as style/depth/format calibration for the AI generation
-// prompt (lib/gtm-generate.ts's buildSystemInstruction), never as a data
-// source for a NEW product's own facts. See STANDING_ANTI_COPY_WARNING below,
+// (SC817B), Homie Shaver Replacement Foil (SC559B), the SC x 360 Jeezy
+// Trimmer (SC423B), the Arbitrage Clipper (SCMD631B), the Saber Trimmer —
+// Orange (SC421O), and the Saber II Clipper — Orange (SC617O). These
+// describe OTHER, already-shipped products — they exist here purely as
+// style/depth/format calibration for the AI generation prompt
+// (lib/gtm-generate.ts's buildSystemInstruction), never as a data source
+// for a NEW product's own facts. See STANDING_ANTI_COPY_WARNING below,
 // which is embedded verbatim in every generation call that includes this
 // corpus.
 //
@@ -144,6 +146,172 @@ export const GTM_STYLE_EXEMPLARS: GtmExemplar[] = [
         "Spec sheet / sell sheet for sales team and external reps. Flyer for trade show and barber education events. Counter card or shelf talker for key retail/POS accounts. In-box co-branded 360 Jeezy barber collab insert card.",
       marketing_trade_show_launch:
         "Yes, if aligned with launch timing. Booth featuring SC423B alongside SC x 360 Jeezy Clipper as the complete pro collab lineup. 360 Jeezy appearance/demo opportunity if available.",
+    },
+  },
+  {
+    productName: "StyleCraft Arbitrage Clipper",
+    sku: "SCMD631B",
+    tier: "flagship",
+    excerpts: {
+      why_creating_item:
+        "Barbers want to feel real performance change in their tool, not just another spec sheet claim. The Arbitrage answers that with a P.U.R.E. Outrunner Motor, new technology for StyleCraft, paired with Intuitive Torque Control that automatically adjusts power to resistance. It delivers serious power while running quiet and smooth in the hand.",
+      positioning_statement:
+        "The Arbitrage Clipper is built around a motor StyleCraft has never used before. The P.U.R.E. Outrunner Motor with Intuitive Torque Control gives barbers power that adjusts to the cut in real time, and does it while running remarkably quiet, backed by a DLC Echo blade, a heavy-duty full metal body, and up to 4 hours of run-time on a single charge.",
+      product_name_origin: "Arbitrage - the edge gained by spotting an advantage before anyone else does.",
+      name_story_tie:
+        "Just like an arbitrage move captures an edge others haven't spotted yet, this clipper gives barbers access to motor technology StyleCraft hasn't put in a clipper before, an advantage in the chair before it becomes the standard everyone else is chasing.",
+      new_technology:
+        "YES. New P.U.R.E. Outrunner Motor. You can see the motor spinning inside the machine. This is the same type of motors that are in drones.",
+      features_full_list:
+        "P.U.R.E Permanent-Magnet Ultra Rotational Engine Outrunner Motor with Intuitive Torque Control runs up to 7,200 RPM to adjust for resistance.\nFixed premium DLC Echo blade and shallow tooth 2.0 cutter feeds hair more efficiently for a smoother, pull-free cut and an audible crunch.",
+      up_sell: "Bundle with the Saber trimmer and Instinct shaver for a full behind the chair kit",
+      reason_to_buy:
+        "New technology for StyleCraft, with Intuitive Torque Control that automatically adjusts power through thick or resistant hair, all while running quiet with minimal vibration. Paired with a fixed DLC Echo blade for a smoother pull-free cut and a heavy-duty full metal body, in one cordless clipper that runs up to 4 hours on a single charge.",
+      expert_tip:
+        "Let the motor do the work. Intuitive Torque Control automatically pushes more power through thick or resistant hair, so you don't need to force the pass, and the outrunner design keeps it noticeably quieter in your hand while it does it.",
+      approved_pricing: "Salon: $259.95 | Retail: $269.95",
+      marketing_primary_goal:
+        "Drive trial and revenue at launch. Build brand equity around the P.U.R.E. Outrunner Motor as a new, differentiated motor technology for StyleCraft, positioning the Arbitrage as a genuine step forward in cordless clipper performance.",
+      marketing_success_kpis:
+        "Sell-through rate, with sold out at launch as the 30-day health benchmark. Revenue at dealer and salon. Organic social engagement and barber creator UGC volume. Demo video views. Amazon BSR rank within 90 days of launch.",
+      marketing_launch_timing:
+        "Marketing should kick off aligned to sampling delivery, with barber creator seeding starting 4 to 6 weeks before the in-market date. Demo video and PDP go live day-of launch. Treat this as a coordinated launch event, not a quiet lineup addition.",
+      marketing_core_audience:
+        "Professional barbers, full-time and high-volume, who are actively upgrading their tool lineup. They're performance-driven, follow barber culture on social, and pay attention to real motor and blade technology rather than marketing claims. They want to feel like they're cutting with something genuinely new.",
+      marketing_secondary_audience:
+        "Mobile barbers and independent suite owners who need reliable cordless performance outside a fixed station. Barbering students and recent grads making a first pro clipper investment. Barber supply retailers and distributors evaluating new SKUs to carry.",
+      marketing_consumer_barrier:
+        "Barbers have heard 'powerful motor' before and tune it out. Marketing needs to make the P.U.R.E. Outrunner Motor feel like a real technological step forward, not another spec sheet claim, by showing what the motor actually does differently in the cut.",
+      marketing_messaging_direction:
+        "Confident, sharp, technically credible. Speaks like a barber who's genuinely impressed by what's under the hood, not someone selling a deal. Lead with the P.U.R.E. Outrunner Motor as new ground for StyleCraft, and let Intuitive Torque Control and the quiet, vibration-free feel carry the proof.",
+      marketing_product_name_origin:
+        "Arbitrage - taking advantage of an edge others haven't found yet. Here, that edge is the motor: new outrunner technology StyleCraft hasn't used before, giving barbers a genuine performance advantage.",
+      marketing_visual_direction:
+        "In-salon, behind-the-chair demo content leading the mix, showing the motor working through resistance in real cuts. Supplement with tight product-focused shots highlighting the full metal body and blade. Avoid overly staged lifestyle imagery; keep it grounded in the shop.",
+      marketing_content_ideas:
+        "Demo-first content showing the torque control adjusting to thick or resistant hair in real time. Side-by-side quiet-operation comparisons against louder competitor motors. Barber creator 'first cut' reaction content focused on how quiet and controlled the motor feels. Behind-the-build content on the outrunner motor and blade.",
+      marketing_languages: "English, Spanish",
+      marketing_dos_donts:
+        "DO lead with the motor as new technology for StyleCraft. DO make the torque control tangible and demonstrable. DO NOT frame this around price or value positioning. DO NOT overclaim the motor as first-of-its-kind in the market; it's new to barber tools and new to StyleCraft, not new to market overall. DO NOT use em dashes in any copy.",
+      marketing_trade_show_launch: "If the timing aligns, yes",
+    },
+  },
+  {
+    productName: "Saber Trimmer — Orange",
+    sku: "SC421O",
+    tier: "flagship",
+    excerpts: {
+      why_creating_item:
+        "The Saber Trimmer is the benchmark barbers measure other trimmers against. It already exists and already performs. This is updated content for a new color, extending the Saber lineup with a finish that matches how barbers want their station to look.",
+      positioning_statement:
+        "The Saber Trimmer sets the standard for detail work in modern barbering, pairing the highest torque with the lowest vibration for laser lines and clean perimeters. Now finished in orange for the barbers who treat their tools as part of their signature.",
+      product_name_origin:
+        "Inspired by the saber-toothed tiger, the Saber embodies raw power and calculated precision. An apex predator in its time, this trimmer carries that legacy, built to perform at the highest level.",
+      name_story_tie:
+        "The Saber name is built on precision under power. The trimmer is where that precision is most visible, in the line, the edge, and the perimeter. Orange brings that predator energy forward in a way the original finishes could not. In a craft that is always evolving, the Saber is a tool built for those who lead, not follow.",
+      features_full_list:
+        "Fixed black DLC X-Pro Wide blade and \"The One\" deep tooth cutter\nLong-life digital brushless motor runs up to 7,200 RPM",
+      up_sell:
+        "Sell the pair. A barber buying the orange Saber 2 Clipper is the same barber who wants the matching orange trimmer on the station. Lead with the set, not the single tool.",
+      reason_to_buy:
+        "Highest torque, lowest vibration. The X-Pro Wide blade with \"The One\" cutter edges up with laser lines and blasts through bulk, and the full metal body holds steady through a full book of clients.",
+      expert_tip:
+        "Set the blade flat to the skin for the perimeter, then roll the trimmer 10 to 15 degrees and flick out to erase bulk lines without over etching. Keep the blade cool and lightly oiled between clients so the crunch stays crisp.",
+      approved_pricing: "Salon $199.95 / Retail $209.95",
+      // Product FAQ section — real our_differentiators/selling_position/
+      // rep_talking_point content, not present in any exemplar before this one.
+      our_differentiators:
+        "Highest torque and lowest vibration in its class, in a full metal body that weighs almost nothing. The X-Pro Wide blade paired with \"The One\" cutter delivers the audible crunch barbers recognize, and zero gaps with the included setter for the closest possible finish. The skeleton-style axis keeps the sightline open for detail work other trimmers block. Backed by a 1 year warranty.",
+      selling_position:
+        "The Saber Trimmer is the benchmark barbers measure other trimmers against. High torque, low vibration, full metal, and a blade combination built for laser lines and bulk in the same pass. Now available in orange, the same tool barbers already trust, in a finish that stands out on any station.",
+      rep_talking_point_1:
+        "Digital brushless motor at 7,200 RPM. Highest torque, lowest vibration. It runs cooler, cuts smoother, and lasts over 1,000 hours of motor life. Barbers feel the difference in the wrist by the end of a full day.",
+      rep_talking_point_2:
+        "Black DLC X-Pro Wide blade with \"The One\" deep tooth cutter. It edges up with laser lines and blasts through bulk without switching tools. Zero gaps with the setter that comes assembled in the box, for the closest finish possible.",
+      rep_talking_point_3:
+        "Full metal body at 3.5 ounces. Heavy-duty enough to dampen noise and absorb vibration, light enough to run all day without fatigue, and the skeleton-style axis keeps the sightline wide open for detail work. This is a tool built for how barbers actually work.",
+      marketing_primary_goal:
+        "Drive revenue and retailer sell-in, and drive attach rate to the SC617O Saber 2 Clipper in Orange. Expand the Saber collection footprint with a colorway that creates urgency among barbers who lead with personality.",
+      marketing_success_kpis:
+        "Revenue (primary). Attach rate to SC617O. ROAS on paid social and Amazon. Amazon PDP conversion rate. Email open rate and CTR. Distributor sell-in units. Social engagement rate including reach, saves, and shares.",
+      marketing_launch_timing:
+        "Kick off 4 weeks ahead of launch. If the orange clipper and trimmer launch together, run one campaign with the set as the hero rather than two separate product pushes.",
+      marketing_core_audience:
+        "Barbers aged 22 to 45 who view their tools as an extension of their brand identity. Performance-driven, brand-loyal, and culturally connected. Detail-focused, since the trimmer is where their line work gets judged. Primarily male, based in independent shops and suites. Many already own a Saber Trimmer in black or white.",
+      marketing_secondary_audience:
+        "Aspiring barbers and cosmetology students building a first pro kit. Gift buyers shopping for a barber during Q4 holiday season. Existing Saber 2 Clipper owners who want the matching trimmer.",
+      marketing_consumer_barrier:
+        "For existing Saber Trimmer owners: I already have this, why do I need another. Frame the orange as a collectible, expressive tool that signals identity on the station. For new buyers: performance parity with the black and white has to be explicit.",
+      marketing_messaging_direction:
+        "Tone is bold, proud, unapologetic. The barbers who choose orange are not blending in, they are showing up. Lean into tool identity and personal brand, and into the trimmer specifically as the tool that finishes the work. Avoid generic now available in orange language. Lead with personality, back it with performance.",
+      marketing_product_name_origin:
+        "Orange is the color of energy, fire, and dominance, an apex predator at full force. The Saber is already named for the saber-toothed tiger. Orange brings that predator energy to life in a way the original finishes could not.",
+      marketing_visual_direction:
+        "Product-focused studio shots on dark backgrounds with the orange as hero. Macro on the blade and the line it leaves. In-hand shots in real barbershops, mid-detail. The trimmer is a precision tool, so the creative should show precision, not just the object. Set shots pairing it with the orange Saber 2 Clipper. Real barbers, real shops.",
+      marketing_content_ideas:
+        "Line work close-ups and edge-up ASMR using the orange SKU. Side-by-side colorway lineup content. The full orange setup, clipper and trimmer together on station. What your tools say about you social series. Unboxing and first-look content for influencer seeding.",
+      marketing_languages: "English primary. Spanish and French Canadian",
+      marketing_dos_donts:
+        "DO lead with barber identity and personal brand. DO hero the orange against dark backgrounds. DO show line work and detail results, not just the tool. DO merchandise it with the orange Saber 2 Clipper as a set. DO cite specs where they validate the tool for new buyers. DON'T position orange as secondary or lesser than the black or white. DON'T use generic now available in a new color messaging. DON'T show home or bathroom settings. DON'T name or compare to competitor brands. DON'T use professional as a standalone descriptor.",
+    },
+  },
+  {
+    productName: "Saber II Clipper — Orange",
+    sku: "SC617O",
+    tier: "flagship",
+    excerpts: {
+      why_creating_item:
+        "There's a reason the Saber 2 is our best seller, it outperforms everything else in its class. From raw cutting power to dialed-in precision, this is the clipper barbers depend on when average isn't an option. It's the best clipper in barbering. Period. Now available in a new color.",
+      positioning_statement:
+        "The Saber 2 defines the standard for modern barbering, combining elite cutting power with refined control to deliver unmatched performance in every environment.",
+      product_name_origin:
+        "Inspired by the saber-toothed tiger, the Saber 2 embodies raw power and calculated precision. An apex predator in its time, this clipper carries that legacy, built to perform at the highest level.",
+      name_story_tie:
+        "The Saber 2 represents evolution in motion. Inspired by the saber-toothed tiger, an apex predator that defined its era, this clipper carries that same legacy of dominance, precision, and control. In a craft that's always evolving, the Saber 2 stands as a tool built for those who lead, not follow.",
+      features_full_list:
+        "Fixed DLC Echo Blade & Shallow Tooth 2.0 Cutter\nEON Digital Brushless Motor runs at up to 7,200 rpm",
+      up_sell:
+        "Trade up barbers who already own an older Saber or a competitor clipper. The motor and blade are the upgrade story, the orange finish is the conversation starter that gets them to pick it up.",
+      reason_to_buy:
+        "Quiet. Strong. Ergonomic. The Saber 2, paired with the Echo blade and the audible crunch feedback every barber knows and loves.",
+      expert_tip:
+        "Keep your clipper blades cool, clean, and lightly oiled during and after every service. Heat buildup and hair debris are the fastest ways to reduce cutting performance and shorten blade life.",
+      approved_pricing: "Salon: $299.95 Retail: $319.95",
+      our_differentiators:
+        "The only clipper in its class pairing the EON Digital Brushless Motor with the DLC Echo blade for audible crunch feedback. Full metal body with modular magnetic drop-tops, so barbers get a premium feel and still clean it in seconds. Tight and stretch taper bracket kits plus a floating lever make the taper genuinely customizable. Best seller status in the Saber lineup, backed by a 1 year warranty.",
+      selling_position:
+        "The Saber 2 is the best clipper in barbering, period. Inspired by the apex predator that defined its era, it combines elite cutting power with refined control. Now available in orange, it is the same dominant performance barbers depend on, in a colorway that stands out in any shop.",
+      rep_talking_point_1:
+        "EON Digital Brushless Motor, 7,200 RPM. The Saber 2 runs up to 7,200 RPM of quiet, consistent power. It does not bog down, it does not overheat, and it does not quit. This is the motor barbers trust when they cannot afford a bad cut.",
+      rep_talking_point_2:
+        "DLC Echo blade with Shallow Tooth 2.0 cutter. The DLC Echo fixed blade gives you that audible crunch every barber knows and loves, paired with the Shallow Tooth 2.0 cutter for a smoother cut with zero pulling. It is a blade combo built for precision, and it can be zero gapped for the closest finish possible.",
+      rep_talking_point_3:
+        "Heavy-duty full metal body with modular drop-tops. The Saber 2 is built like a tank, dampens noise and absorbs vibration, and it is still modular. The removable magnetic drop-tops make cleaning effortless, and the tight or stretch taper bracket kits let barbers customize their taper on the fly. This clipper adapts to how you work.",
+      marketing_primary_goal:
+        "Drive revenue and retailer sell-in. Expand the Saber II collection footprint with a high-demand colorway that creates urgency among pro barbers who lead with personality. Secondary goal is to grow new-to-brand awareness through bold visual identity.",
+      marketing_success_kpis:
+        "Revenue (primary); ROAS (paid social + Amazon); Amazon PDP conversion rate; email open rate + CTR; distributor sell-in units; social engagement rate (reach, saves, shares).",
+      marketing_launch_timing:
+        "Marketing kick-off: 4 weeks prior to Q4 2026 launch date (approx. early September 2026). Pre-launch teaser phase begins T-4 weeks. Full channel activation at launch week. Sustain phase runs 8 weeks post-launch.",
+      marketing_core_audience:
+        "Barbers aged 22 to 45 who treat their tools as an extension of their brand identity. Performance-driven, brand-loyal, and culturally connected. They follow other barbers on social, care about how their setup looks, and invest in tools that reflect their craft. Primarily male, working out of independent shops and suites. Most are already aware of or running the Saber 2 in black.",
+      marketing_secondary_audience:
+        "Aspiring barbers and cosmetology students who follow barber culture and want to build their professional kit. Gift buyers shopping for a professional barber during holiday season (Q4 timing). Style-forward consumers who want a premium clipper with standout aesthetics.",
+      marketing_consumer_barrier:
+        "For existing Saber 2 owners: I already have the Saber 2, so why do I need this? Marketing must reinforce that this is a collectible, expressive tool that signals identity and craft in the chair. For new buyers: must communicate performance parity with the original black SKU so the color never reads as a step down in quality.",
+      marketing_messaging_direction:
+        "Bold, proud, and unapologetic. Barbers who choose orange are not blending in, they are showing up. Lean into tool identity and personal brand. Skip generic \"Now available in orange\" language. Lead with personality, back it with performance.",
+      marketing_product_name_origin:
+        "Orange is the color of energy, fire, and dominance, the look of an apex predator at full force. The Saber 2 is already named after the saber-toothed tiger. Orange brings that predator energy to life in a way the original black colorway could not. This is the Saber in its element.",
+      marketing_visual_direction:
+        "Product-focused studio shots against dark or black backgrounds with the orange as the hero. In-hand shots in real barbershop environments. Lifestyle content showing the full setup, with the orange clipper on station and in hand mid cut. Close-up texture on the all-metal body and the orange lever and accents. Avoid overly clinical or sterile product-only imagery. Real barbers, real shops.",
+      marketing_content_ideas:
+        "Reveal content: \"Something new is coming to the Saber collection\" teaser. Side-by-side colorway lineup content featuring the Saber family in black, white, and orange. ASMR clipper cut content using the orange SKU. \"What your clipper color says about you\" social series. Barber identity content built around tool setups with the orange as the focal point. Unboxing and first-look content for influencer seeding.",
+      marketing_languages: "English (primary). Spanish & French Canadian, strong barber market overlap with Spanish-speaking professionals in the US.",
+      marketing_dos_donts:
+        "DO: Lead with barber identity and personal brand story. Hero the orange colorway against dark backgrounds. Use real barbers and real shop environments. Reference the Saber collection (Black, White, Gold, Orange) to position it as a lineup. Reference performance specs when relevant to validate the tool for new buyers. DON'T: Position the orange SKU as secondary or lesser to the original black. Avoid generic \"now available in a new color\" messaging. Don't show it in domestic or home bathroom settings. Don't lead with specs alone. Emotion and identity come first.",
+      marketing_web_coverage:
+        "PDP page (Amazon, DTC/Brand.com, Walmart) — hero images, A+ content module, feature bullet copy. Brand storefront update on Amazon and Walmart.",
     },
   },
 ];
