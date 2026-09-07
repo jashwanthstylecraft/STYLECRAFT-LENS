@@ -187,6 +187,18 @@ export default function AnalyzePage() {
   const [addingToolType, setAddingToolType] = useState(false);
   const [toolTypeDupSuggestion, setToolTypeDupSuggestion] = useState<{ label: string; type_key: string } | null>(null);
 
+  // Market Category auto-fill — proposes the selected Tool Type's own label
+  // (e.g. "Hair Clippers" for the clipper type) as a starting point, since
+  // that's the most common real value anyway. Same "only fill if empty"
+  // rule as the Description autofill below — never overwrites a value the
+  // user already typed, or one pre-filled from an existing project.
+  useEffect(() => {
+    if (!toolType || category.trim() || toolTypes.length === 0) return;
+    const label = getToolTypeLabel(toolType, toolTypes);
+    if (label && label !== "—") setCategory(label);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toolType, toolTypes]);
+
   // Populates the Motor Type <select> with the real, fixed 7-family
   // taxonomy (lib/motor-taxonomy.ts).
   useEffect(() => {
