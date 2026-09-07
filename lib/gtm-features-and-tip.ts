@@ -33,13 +33,6 @@ export interface FeatureBullet {
   source: FeatureBulletSource;
 }
 
-const SOURCE_TAGS: Record<FeatureBulletSource, string> = {
-  input: "Input",
-  our_listing: "Our listing",
-  competitor_informed: "Competitor-informed",
-  unconfirmed: "Unconfirmed",
-};
-
 function dedupeAgainst(existing: string[], candidate: string): boolean {
   const lc = candidate.toLowerCase();
   return existing.some(e => {
@@ -48,12 +41,31 @@ function dedupeAgainst(existing: string[], candidate: string): boolean {
   });
 }
 
-// Source #1 — our own input: the catalog/product description's "3 main
-// callouts", split on commas/semicolons (how these short phrase lists are
-// actually written — see lib/memoryDb.ts's seedCatalogProductDefaults).
+// Source #1 — our own input. Two real shapes exist for this text: a short
+// comma/semicolon-separated callout list with no sentence punctuation at
+// all (e.g. "EON Digital brushless motor up to 7,200rpm, Echo blade with
+// shallow 2.0 cutter, full metal body" — see lib/memoryDb.ts's
+// seedCatalogProductDefaults), and real multi-sentence prose (a project's
+// free-text Description, or a catalog description written as actual
+// sentences). Splitting a real sentence on every comma inside it produces
+// a mid-sentence, no-punctuation fragment as its own "feature" (confirmed
+// live — a comma right before "and irritation" split "Reduces razor
+// bumps, and irritation. Its 2-in-1 design combines..." into a bare
+// "Reduces razor bumps" bullet and an "and irritation. Its 2-in-1 design
+// combines..." bullet). Split on sentence boundaries first whenever the
+// text actually has any (a period/!/? followed by whitespace or the
+// string's end) — only fall back to the comma/semicolon split when there's
+// no sentence punctuation at all, i.e. it really is a short callout list.
 function buildInputBullets(description: string | null | undefined): string[] {
   if (!description) return [];
-  return description.split(/[,;]/).map(s => s.trim()).filter(s => s.length > 3);
+  const looksLikeProse = /[.!?](\s|$)/.test(description);
+  // The comma/semicolon fallback must not split a number's thousands
+  // separator (e.g. "7,200rpm") in half — a real phrase-separating comma is
+  // never immediately followed by a digit, so only split there.
+  const parts = looksLikeProse
+    ? description.split(/(?<=[.!?])\s+/)
+    : description.split(/[,;](?!\d)/);
+  return parts.map(s => s.trim()).filter(s => s.length > 3);
 }
 
 // Source #2 — our own listing: spec-derived sentences from TDS's own
@@ -92,10 +104,21 @@ function buildOurListingBullets(tds: Record<string, string> | null): string[] {
 // simply never written (lib/gtm-group-fields.ts trims them from CSV/PDF).
 export const FEATURES_FULL_LIST_GROUP_SIZE = 5;
 
+// Provenance (which of the 4 FeatureBulletSource tiers a bullet came from)
+// is stored separately in sourceDetail.source, and "needs review" is a real
+// flagged chip in the UI (both already set where this is called) — a
+// bracketed "[Input]"/"[Our listing]" suffix baked into the visible answer
+// text itself was pure redundant clutter with no reader not already served
+// by those, so the row's real content is the whole answer now.
 function renderFeatureRowAnswer(bullet: FeatureBullet): string {
-  return `${bullet.text} [${SOURCE_TAGS[bullet.source]}]`;
+  return bullet.text;
 }
 
+// Still needed for Expert Tip grounding below: an EXISTING document
+// generated before this change may still have a stale "[Input]"/"[Our
+// listing]" suffix sitting in its stored answer — strip it defensively so
+// it never leaks into Expert Tip's prompt content. A no-op on any answer
+// generated after this change (nothing left to strip).
 function stripSourceTag(rowAnswer: string): string {
   return rowAnswer.replace(/\s*\[[^\]]+\]\s*$/, "").trim();
 }
