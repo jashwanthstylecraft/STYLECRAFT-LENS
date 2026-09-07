@@ -311,8 +311,18 @@ export const GTM_FIELD_SCHEMA: GtmField[] = [
   field("new_line_or_current", "General", "New Line or Current Collection?"),
   field("new_technology", "General", "New Technology?"),
   field("approved_pricing", "General", "Approved Pricing", { helperText: "Format: Salon: $X   Retail: $Y" }),
-  field("good_better_best", "General", "Good Better Best (Lineup)"),
-  field("good_better_best_performance", "General", "Good Better Best (Performance)"),
+  // Both fields are already deterministically derived where real data
+  // exists (lib/gtm-tier6-inference.ts's deriveGoodBetterBestLineup/
+  // deriveGoodBetterBestPerformance, both built on lib/pricing-analysis.ts's
+  // computeTiers 3-way tertile split) — Lineup ranks this product's price
+  // against its own catalog siblings, Performance ranks its RPM against
+  // competitors', and BOTH only ever produce one of exactly these 3 labels.
+  // Constraining the UI/AI answer to a select of the same 3 values means an
+  // AI/web-tier guess can never drift onto a different label (an old
+  // pre-automation product's real sheet used "Standard/Premium/Elite" here,
+  // but that's not what this app's own derivation produces today).
+  field("good_better_best", "General", "Good Better Best (Lineup)", { uiControl: "select", options: ["Good", "Better", "Best"] }),
+  field("good_better_best_performance", "General", "Good Better Best (Performance)", { uiControl: "select", options: ["Good", "Better", "Best"] }),
   field("hair_type", "General", "Hair Type"),
   ...groupFields("features_full_list", "General", "Feature", 5),
   field("up_sell", "General", "Up-sell (Sales play opportunity)"),
