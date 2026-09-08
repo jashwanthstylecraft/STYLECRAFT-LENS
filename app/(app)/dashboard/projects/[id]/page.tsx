@@ -2996,33 +2996,6 @@ function ProjectOutputsBar({ project, report, tdsEnabled }: { project: any; repo
           </div>
         )}
 
-        {/* Go-To-Market Card */}
-        <div className="p-3 bg-surface-1 border border-border rounded-lg flex flex-col gap-2">
-          <div className="space-y-0.5">
-            <h4 className="font-bold text-text-primary text-xs flex items-center gap-1.5">
-              <span>🎯 Go-To-Market (Product Knowledge)</span>
-            </h4>
-            <p className="text-[10px] text-text-muted">77-field spec sheet — generate it from the Go To Market tab</p>
-          </div>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <button
-              type="button"
-              onClick={() => downloadPdf("gtm", project.id)}
-              disabled={!hasGtm || downloadingPdf === "gtm"}
-              title={hasGtm ? undefined : "The Go-To-Market sheet hasn't generated any real field answers yet"}
-              className="flex items-center gap-1 px-3 py-1.5 border border-border hover:border-border-strong text-text-secondary text-[11px] font-bold rounded-lg transition-colors disabled:opacity-50"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>{downloadingPdf === "gtm" ? "Rendering…" : "Download PDF"}</span>
-            </button>
-            {hasGtm ? (
-              <SaveToDriveButton docType="gtm" id={project.id} initialDriveUrl={driveUrls["gtm"]} />
-            ) : (
-              <span className="text-[10px] text-text-muted italic">Not generated yet</span>
-            )}
-          </div>
-        </div>
-
         {/* Active Report Card */}
         <div className="p-3 bg-surface-1 border border-border rounded-lg flex flex-col gap-2">
           <div className="space-y-0.5">
