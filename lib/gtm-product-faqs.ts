@@ -20,7 +20,7 @@ import { listToolTypes } from "./db/tool-types";
 // the spec's own input list (compatibility is covered by blades/guards,
 // "who it's for" by core_consumer, already folded into the prompt itself).
 const GROUNDED_FACT_FIELD_IDS = [
-  ...Array.from({ length: 5 }, (_, i) => `features_full_list_${i + 1}`),
+  ...Array.from({ length: 4 }, (_, i) => `features_full_list_${i + 1}`),
   "core_consumer",
   "motor_type", "motor_rpm", "motor_run_time", "motor_recharge_time", "motor_speed", "motor_noise_level",
   "blade_name", "fixed_blade", "cutting_blade",

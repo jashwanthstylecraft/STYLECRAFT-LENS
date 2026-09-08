@@ -41,10 +41,21 @@ async function main() {
   assert(noiseLevel?.uiControl === "select" && JSON.stringify(noiseLevel?.options) === JSON.stringify(["Ultra Quiet", "Low", "Moderate"]), "motor_noise_level is an Ultra Quiet/Low/Moderate select");
   assert(!!byId.get("motor_recharge_time"), "new motor_recharge_time field exists");
 
+  // Manual-fill-only fields (real ops/legal/marketing decisions — never
+  // AI-generated, hidden from the UI/completion-% when empty).
+  for (const id of ["comps_buying_guide", "trademark_symbol", "rating_label", "dieline", "box_type", "pallet_tier_total", "pallets_high", "marketing_educator_sampling", "marketing_influencer_sampling", "marketing_stylecraft_sales_team", "marketing_external_sales_rep_sampling", "marketing_key_accounts_sampling", "marketing_promo", "dealer_gross_margin_pct", "retail_gross_margin_pct", "initial_quantities_ordered"]) {
+    const f = byId.get(id);
+    assert(INTERNAL_FIELD_IDS.has(id) && f?.legacyOptional === true, `${id} is internal-kind and legacyOptional (manual fill only, hidden when empty)`);
+  }
+  for (let i = 1; i <= 5; i++) {
+    const f = byId.get(`feature_icons_${i}`);
+    assert(INTERNAL_FIELD_IDS.has(`feature_icons_${i}`) && f?.legacyOptional === true, `feature_icons_${i} is internal-kind and legacyOptional`);
+  }
+
   assert(!byId.has("features_full_list"), "old single features_full_list field is gone");
-  const featureRows = Array.from({ length: 5 }, (_, i) => byId.get(`features_full_list_${i + 1}`));
-  assert(featureRows.every(Boolean), "features_full_list_1..5 all exist");
-  assert(featureRows.every(f => f?.group?.id === "features_full_list" && f?.group?.total === 5), "every features_full_list row carries correct group metadata");
+  const featureRows = Array.from({ length: 4 }, (_, i) => byId.get(`features_full_list_${i + 1}`));
+  assert(featureRows.every(Boolean), "features_full_list_1..4 all exist");
+  assert(featureRows.every(f => f?.group?.id === "features_full_list" && f?.group?.total === 4), "every features_full_list row carries correct group metadata");
 
   assert(!byId.has("top_6_features"), "old single top_6_features field is gone");
   assert(Array.from({ length: 5 }, (_, i) => byId.get(`top_6_features_${i + 1}`)).every(Boolean), "top_6_features_1..5 all exist");

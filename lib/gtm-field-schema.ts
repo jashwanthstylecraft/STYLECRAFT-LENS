@@ -211,6 +211,17 @@ export const INTERNAL_FIELD_IDS = new Set([
   "heat_glove",
   "extra_filters",
   "attachments_list",
+  // Comps for Buying Guide (a link to an internal comparison doc) and the
+  // Icons group (a creative/packaging decision, not a fact) — same "no
+  // source document could ever answer this, only a person" reasoning as
+  // the rest of this set, added per an explicit request to stop AI/web
+  // attempts on these and hide them from the field count when empty.
+  "comps_buying_guide",
+  "feature_icons_1",
+  "feature_icons_2",
+  "feature_icons_3",
+  "feature_icons_4",
+  "feature_icons_5",
 ]);
 
 const INTERNAL_FIELD_OWNERS: Record<string, string> = {
@@ -266,6 +277,12 @@ const INTERNAL_FIELD_OWNERS: Record<string, string> = {
   heat_glove: "Ops",
   extra_filters: "Ops",
   attachments_list: "Ops",
+  comps_buying_guide: "Product Marketing",
+  feature_icons_1: "Product Marketing",
+  feature_icons_2: "Product Marketing",
+  feature_icons_3: "Product Marketing",
+  feature_icons_4: "Product Marketing",
+  feature_icons_5: "Product Marketing",
 };
 
 interface FieldExtra {
@@ -293,10 +310,10 @@ function field(id: string, section: string, question: string, extra?: FieldExtra
 // document_fields row) but visually and export-wise treated as one group
 // (lib/gtm-group-fields.ts's filterTrailingEmptyGroupRows, the UI's group
 // render branch in ProductKnowledgeSection).
-function groupFields(idPrefix: string, section: string, rowLabel: string, total: number): GtmField[] {
+function groupFields(idPrefix: string, section: string, rowLabel: string, total: number, extra?: FieldExtra): GtmField[] {
   return Array.from({ length: total }, (_, i) => {
     const index = i + 1;
-    return field(`${idPrefix}_${index}`, section, `${rowLabel} #${index}`, { group: { id: idPrefix, index, total } });
+    return field(`${idPrefix}_${index}`, section, `${rowLabel} #${index}`, { ...extra, group: { id: idPrefix, index, total } });
   });
 }
 
@@ -324,7 +341,7 @@ export const GTM_FIELD_SCHEMA: GtmField[] = [
   field("good_better_best", "General", "Good Better Best (Lineup)", { uiControl: "select", options: ["Good", "Better", "Best"] }),
   field("good_better_best_performance", "General", "Good Better Best (Performance)", { uiControl: "select", options: ["Good", "Better", "Best"] }),
   field("hair_type", "General", "Hair Type"),
-  ...groupFields("features_full_list", "General", "Feature", 5),
+  ...groupFields("features_full_list", "General", "Feature", 4),
   field("up_sell", "General", "Up-sell (Sales play opportunity)"),
   ...groupFields("cross_sell", "General", "Cross Sell Product", 2),
   field("reason_to_buy", "General", "Reason to Buy (Unique Selling Points)"),
@@ -336,23 +353,23 @@ export const GTM_FIELD_SCHEMA: GtmField[] = [
   // Revived per GTM Schema v3 as a plain link/URL text field — distinct
   // from Comparison Chart WEB ONLY above (a picker), and from the removed
   // COMPS field from GTM Schema v2 (not restored; this is a fresh field).
-  field("comps_buying_guide", "General", "Comps for Buying Guide"),
-  field("trademark_symbol", "General", "Trademark Symbol"),
+  field("comps_buying_guide", "General", "Comps for Buying Guide", { legacyOptional: true }),
+  field("trademark_symbol", "General", "Trademark Symbol", { legacyOptional: true }),
   field("warranty", "General", "Warranty"),
   field("certification_needed", "General", "Certification Needed"),
-  field("rating_label", "General", "Rating Label"),
+  field("rating_label", "General", "Rating Label", { legacyOptional: true }),
   field("manufacturer", "General", "Manufacturer"),
 
   // Packaging & Logistics
-  field("dieline", "Packaging & Logistics", "Dieline"),
-  field("box_type", "Packaging & Logistics", "Box Type"),
+  field("dieline", "Packaging & Logistics", "Dieline", { legacyOptional: true }),
+  field("box_type", "Packaging & Logistics", "Box Type", { legacyOptional: true }),
   field("product_lwh", "Packaging & Logistics", "Product LxWxH (in.)"),
   field("product_weight", "Packaging & Logistics", "Product Weight (lbs.)"),
   field("box_lwh", "Packaging & Logistics", "Box LxWxH (in.)"),
   field("measurement_by", "Packaging & Logistics", "Measurement By"),
   field("box_weight", "Packaging & Logistics", "Box Weight (lbs.)"),
-  field("pallet_tier_total", "Packaging & Logistics", "Pallet Tier (Total)"),
-  field("pallets_high", "Packaging & Logistics", "Pallets High"),
+  field("pallet_tier_total", "Packaging & Logistics", "Pallet Tier (Total)", { legacyOptional: true }),
+  field("pallets_high", "Packaging & Logistics", "Pallets High", { legacyOptional: true }),
 
   // Tool Description
   // Header renders "{Product Title} — {SKU}" in the UI/CSV/PDF once a SKU is
@@ -361,7 +378,7 @@ export const GTM_FIELD_SCHEMA: GtmField[] = [
   field("product_title", "Tool Description", "Product Title"),
   field("material", "Tool Description", "Material"),
   ...groupFields("top_6_features", "Tool Description", "Top Feature", 5),
-  ...groupFields("feature_icons", "Tool Description", "Icon", 5),
+  ...groupFields("feature_icons", "Tool Description", "Icon", 5, { legacyOptional: true }),
   field("care_directions", "Tool Description", "Care Directions"),
   // Grounded (verbatim from the Amazon listing), not written — see kind
   // classification above. Deliberately excluded from WRITTEN_FIELD_IDS.
@@ -543,12 +560,12 @@ export const GTM_FIELD_SCHEMA: GtmField[] = [
   field("marketing_ad_channels", "Marketing Direction", "Where should we be advertising? (based on priority and budget)", { owner: "Marketing" }),
   field("marketing_print_material", "Marketing Direction", "Print Material?", { owner: "Marketing" }),
   field("marketing_trade_show_launch", "Marketing Direction", "Trade Show Launch", { owner: "Marketing" }),
-  field("marketing_educator_sampling", "Marketing Direction", "Educator Sampling"),
-  field("marketing_influencer_sampling", "Marketing Direction", "Influencer Sampling"),
-  field("marketing_stylecraft_sales_team", "Marketing Direction", "Stylecraft Sales Team"),
-  field("marketing_external_sales_rep_sampling", "Marketing Direction", "External Sales Rep Sampling"),
-  field("marketing_key_accounts_sampling", "Marketing Direction", "Key Accounts Sampling"),
-  field("marketing_promo", "Marketing Direction", "Promo"),
+  field("marketing_educator_sampling", "Marketing Direction", "Educator Sampling", { legacyOptional: true }),
+  field("marketing_influencer_sampling", "Marketing Direction", "Influencer Sampling", { legacyOptional: true }),
+  field("marketing_stylecraft_sales_team", "Marketing Direction", "Stylecraft Sales Team", { legacyOptional: true }),
+  field("marketing_external_sales_rep_sampling", "Marketing Direction", "External Sales Rep Sampling", { legacyOptional: true }),
+  field("marketing_key_accounts_sampling", "Marketing Direction", "Key Accounts Sampling", { legacyOptional: true }),
+  field("marketing_promo", "Marketing Direction", "Promo", { legacyOptional: true }),
 
   // Product FAQ — generated automatically after GTM's own fields resolve
   // (new "faqs" pipeline phase, lib/gtm-product-faqs.ts), matching the
@@ -560,9 +577,9 @@ export const GTM_FIELD_SCHEMA: GtmField[] = [
   field("rep_talking_point_1", "Product FAQ", "Rep Talking Point 1"),
   field("rep_talking_point_2", "Product FAQ", "Rep Talking Point 2"),
   field("rep_talking_point_3", "Product FAQ", "Rep Talking Point 3"),
-  field("dealer_gross_margin_pct", "Product FAQ", "Dealer Gross Margins: %"),
-  field("retail_gross_margin_pct", "Product FAQ", "Retail Gross Margin: %"),
-  field("initial_quantities_ordered", "Product FAQ", "Initial Quantities Ordered: #"),
+  field("dealer_gross_margin_pct", "Product FAQ", "Dealer Gross Margins: %", { legacyOptional: true }),
+  field("retail_gross_margin_pct", "Product FAQ", "Retail Gross Margin: %", { legacyOptional: true }),
+  field("initial_quantities_ordered", "Product FAQ", "Initial Quantities Ordered: #", { legacyOptional: true }),
 
   // Box Only — matches the official GTM workbook template's "BOX ONLY" tab.
   // Product Name/Collection Name/Icons/Warranty/Certifications/Includes/

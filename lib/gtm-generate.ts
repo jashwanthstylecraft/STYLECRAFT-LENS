@@ -292,7 +292,7 @@ REQUIRED DEPTH for these specific fields (this describes FORMAT AND DEPTH ONLY �
 - up_sell: one selling-motion paragraph naming a specific premium companion/step-up option and a price-framing or recurring-revenue hook (e.g. a replacement-part subscription) — never a generic "upgrade for more value" line.
 - reason_to_buy: 5-6 numbered claims, each starting with a short ALL-CAPS claim phrase followed by the supporting spec and a plain-language benefit (e.g. "ZERO-GAP PRECISION — 7,800rpm brushless motor cuts closer without snagging").
 - expert_tip: 2-4 sentences of concrete, actionable usage/maintenance advice tied to this product's real features; for an accessory/replacement-part product (no motor of its own), frame it as a usage-context tip for the tool it attaches to, not a fabricated feature of the accessory itself.
-- features_full_list_1..5 (each row is one feature): CAPS-lead phrase + exact spec value/unit, adding an "INCLUDES: ..." clause when the feature bundles a real included accessory.
+- features_full_list_1..4 (each row is one feature): CAPS-lead phrase + exact spec value/unit, adding an "INCLUDES: ..." clause when the feature bundles a real included accessory.
 Simple fields (good_better_best, warranty, certification_needed, etc.) stay short and exact — do not pad these with filler.
 
 FIELD SCHEMA (id [section] (grounded|written): question):

@@ -97,12 +97,12 @@ function buildOurListingBullets(tds: Record<string, string> | null): string[] {
   return bullets;
 }
 
-// GTM Schema v3 — Features (full list) is a 5-row repeatable group
-// (features_full_list_1..5, see lib/gtm-field-schema.ts's groupFields)
+// GTM Schema v3 — Features (full list) is a 4-row repeatable group
+// (features_full_list_1..4, see lib/gtm-field-schema.ts's groupFields)
 // rather than one multi-line field. Each bullet becomes its own row/answer,
 // tagged with its source exactly like before; trailing unused rows are
 // simply never written (lib/gtm-group-fields.ts trims them from CSV/PDF).
-export const FEATURES_FULL_LIST_GROUP_SIZE = 5;
+export const FEATURES_FULL_LIST_GROUP_SIZE = 4;
 
 // Provenance (which of the 4 FeatureBulletSource tiers a bullet came from)
 // is stored separately in sourceDetail.source, and "needs review" is a real
@@ -152,7 +152,7 @@ export function deriveFeaturesFullListDeterministic(
   ];
 }
 
-const FEATURE_TARGET_COUNT = 5;
+const FEATURE_TARGET_COUNT = 4;
 
 interface CompetitorTopUpBullet { text: string; confirmed: boolean }
 
@@ -377,7 +377,7 @@ export async function applyFeaturesAndExpertTip(
   tdsGroundingBlock: string = "",
   catalogDescription: string | null = null
 ): Promise<void> {
-  // Features (full list) is a 5-row group — gate on row 1 as the
+  // Features (full list) is a 4-row group — gate on row 1 as the
   // representative "still needs deriving" check, same as any other field.
   const wantsFeatures = schema.some(f => f.id === "features_full_list_1") && isUnresolved(fields, "features_full_list_1");
   if (wantsFeatures) {

@@ -139,7 +139,7 @@ function buildSyntheticFields(): Record<string, { answer: string; notes?: string
     marketing_key_accounts_sampling: a("All"),
     marketing_promo: a("Potentially promo with the Anime Clipper."),
   };
-  for (let i = 1; i <= 5; i++) fields[`features_full_list_${i}`] = a(i <= 4 ? `ZERO-GAP PRECISION FEATURE ${i}` : "");
+  for (let i = 1; i <= 4; i++) fields[`features_full_list_${i}`] = a(i <= 3 ? `ZERO-GAP PRECISION FEATURE ${i}` : "");
   for (let i = 1; i <= 2; i++) fields[`cross_sell_${i}`] = a(`Cross sell product ${i}`);
   for (let i = 1; i <= 5; i++) fields[`top_6_features_${i}`] = a(`Top feature ${i}`);
   for (let i = 1; i <= 5; i++) fields[`feature_icons_${i}`] = a(`ICON ${i}`);
@@ -213,7 +213,7 @@ async function main() {
   assert(readCellText(pk, outWorkbook.sharedStrings, "C2") === "Both", "Core Consumer answer lands in Product Knowledge C2");
   assert(readCellText(pk, outWorkbook.sharedStrings, "C44") === "Anime Trimmer — SC999X", "Product Title renders with the catalog-resolved SKU suffix");
   assert(readCellText(pk, outWorkbook.sharedStrings, "C13") === "ZERO-GAP PRECISION FEATURE 1", "Features (full list) row 1 lands on the anchor row itself");
-  assert(readCellText(pk, outWorkbook.sharedStrings, "C17") === "", "an unfilled trailing feature row stays empty (never force-filled)");
+  assert(readCellText(pk, outWorkbook.sharedStrings, "C16") === "", "an unfilled trailing feature row stays empty (never force-filled)");
   assert(readCellText(pk, outWorkbook.sharedStrings, "C24").includes("Cross sell product 1") && readCellText(pk, outWorkbook.sharedStrings, "C24").includes("Cross sell product 2"), "Cross Sell Products combines multiple answers into its one real template row");
   assert(readCellText(pk, outWorkbook.sharedStrings, "C95") === "1 (assembled on unit)", "Cam Follower Qty lands correctly despite the template's own 'Qtr' label typo");
   assert(readCellText(pk, outWorkbook.sharedStrings, "D27").startsWith("Example:"), "Comparison Chart WEB ONLY's helper example Notes text is left untouched, never overwritten");
