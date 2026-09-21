@@ -134,6 +134,9 @@ async function main() {
   const { toolTypesForIndustry } = await import("../lib/tool-type-taxonomy");
   const { listMotorFamilies } = await import("../lib/db/motor-families");
   const { searchCuratedLegacyBrands } = await import("../lib/legacy-brand-discovery");
+  const { listGroomingGateRules, getGroomingGateConfidenceThreshold } = await import("../lib/db/grooming-gate-rules");
+  const groomingGateRules = await listGroomingGateRules();
+  const groomingGateConfidenceThreshold = await getGroomingGateConfidenceThreshold();
 
   console.log("\n[1] filterCandidatesByCategoryAndIdentity — a trimmer analysis never admits a clipper");
   {
@@ -142,7 +145,7 @@ async function main() {
       { name: "Wahl Senior Clipper", top_feature_summary: "High-torque electromagnetic motor" },
       { name: "BaBylissPRO SnapFX Trimmer", top_feature_summary: "" },
     ];
-    const filtered = filterCandidatesByCategoryAndIdentity(candidates, "legacy", TRIMMER_IDENTITY, TOOL_TYPES);
+    const filtered = filterCandidatesByCategoryAndIdentity(candidates, "legacy", TRIMMER_IDENTITY, TOOL_TYPES, groomingGateRules);
     assert(filtered.length === 2, `only the 2 real trimmers survive (got ${filtered.length})`);
     assert(filtered.every((c: any) => !/clipper/i.test(c.name)), "zero \"clipper\"-titled candidates survive a trimmer analysis");
   }
@@ -179,6 +182,10 @@ async function main() {
       ourSpecs: { rpm: null, runTimeMinutes: null, cordless: null, buildMaterial: null, bladeTech: null },
       weights: { motor: 0.45, price: 0.35, feature: 0.2 },
       keyDiff: "full metal body",
+      groomingGateRules,
+      groomingGateConfidenceThreshold,
+      ourGroomingTag: null,
+      ourIsPetGrooming: false,
     };
 
     const scored = selectByCompositeScore(
@@ -308,8 +315,13 @@ async function main() {
       registry!.categorySlug,
       TOOL_TYPES,
       undefined,
-      undefined,
-      "Vector"
+      // Testability hooks (both budgets) — bounds this call to a couple
+      // seconds instead of the real 20s/12s production budgets, which this
+      // offline script was previously never reaching (an earlier, now-fixed
+      // crash in part [2] always aborted the script before part [7] ran).
+      2_000,
+      "Vector",
+      2_000
     );
     assert(sawSearchTerms.length > 0, "at least one real search term was captured");
     assert(sawSearchTerms.every(t => !/clipper/i.test(t)), `zero literal "clipper" substrings in any constructed query for a trimmer identity (saw: ${JSON.stringify(sawSearchTerms)})`);

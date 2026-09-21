@@ -103,6 +103,7 @@ function makeIdentity(): any {
 async function main() {
   const { buildIndieBrandLineups, computePercentileInLineup, INDIE_LINEUP_TIME_BUDGET_MS } = await import("../lib/indie-brand-lineup");
   const { selectByCompositeScore } = await import("../lib/analysisEngine");
+  const { listGroomingGateRules, getGroomingGateConfidenceThreshold } = await import("../lib/db/grooming-gate-rules");
 
   console.log("\n[1] buildIndieBrandLineups + computePercentileInLineup — real lineup, real percentile");
   scenario = "lineup";
@@ -142,6 +143,15 @@ async function main() {
     ourHeatTech: null,
     ourSpecs: { rpm: null, runTimeMinutes: null, cordless: null, buildMaterial: null, bladeTech: null },
     weights: { motor: 0.45, price: 0.35, feature: 0.2 },
+    // CompositeScoringContext also requires the grooming-gate fields now —
+    // the real seeded default rules (same ones production/memoryDb starts
+    // with), not an empty array: an empty rules list makes 1B's
+    // required_keyword check always fail (nothing to match), rejecting
+    // every candidate outright rather than "passing everything through".
+    groomingGateRules: await listGroomingGateRules(),
+    groomingGateConfidenceThreshold: await getGroomingGateConfidenceThreshold(),
+    ourGroomingTag: null,
+    ourIsPetGrooming: false,
   };
 
   const motorMatchFurtherPrice = {
@@ -149,14 +159,19 @@ async function main() {
     amazon_url: "https://www.amazon.com/dp/B0MOTORMATCH", price: "$280.00", price_raw: 280,
     rating: "4.5", review_count: "500", monthly_sales: null, bsr_rank: null, initials: "MM",
     key_features: [], strengths: [], weaknesses: [], recent_news: [], top_feature_summary: "",
-    feature_bullets: ["Powered by a rotary motor for precision cuts."], specifications: [], description: null,
+    // Includes a structural noun ("blade") alongside the motor mention —
+    // the grooming gate's post-enrichment 1F check requires real
+    // blade/guard/foil/barrel/plate/comb evidence whenever motor evidence
+    // is present, to distinguish a finished grooming tool from a bare
+    // motor/component listing.
+    feature_bullets: ["Powered by a rotary motor for precision cuts with a stainless steel blade."], specifications: [], description: null,
   };
   const priceMatchWrongMotor = {
     name: "CloseButWrong Trimmer", brand: "CloseButWrong Co", asin: "B0CLOSEBUT01",
     amazon_url: "https://www.amazon.com/dp/B0CLOSEBUT01", price: "$262.00", price_raw: 262,
     rating: "4.2", review_count: "300", monthly_sales: null, bsr_rank: null, initials: "CB",
     key_features: [], strengths: [], weaknesses: [], recent_news: [], top_feature_summary: "",
-    feature_bullets: ["Equipped with a magnetic motor system."], specifications: [], description: null,
+    feature_bullets: ["Equipped with a magnetic motor system and adjustable guard comb."], specifications: [], description: null,
   };
 
   const targetPrice = 260;

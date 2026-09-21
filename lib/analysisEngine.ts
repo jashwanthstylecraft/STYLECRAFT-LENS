@@ -1648,10 +1648,10 @@ export function selectByCompositeScore(
     final = tier === "legacy" ? dedupeToOnePerBrand(verifiedPool, limit) : verifiedPool.slice(0, limit);
 
     if (final.length < limit) {
-      const usedBrands = new Set(final.map((c: any) => (c.brand || "").trim().toLowerCase()));
+      const usedBrands = new Set(final.map((c: any) => normalizeBrandToken(c.brand || "")));
       const remaining = limit - final.length;
       const fallbackPool = tier === "legacy"
-        ? unverifiedPool.filter((c: any) => !usedBrands.has((c.brand || "").trim().toLowerCase()))
+        ? unverifiedPool.filter((c: any) => !usedBrands.has(normalizeBrandToken(c.brand || "")))
         : unverifiedPool;
       const topUp = (tier === "legacy" ? dedupeToOnePerBrand(fallbackPool, remaining) : fallbackPool.slice(0, remaining))
         .map((c: any) => ({ ...c, motor_unverified_fallback: true }));
@@ -2215,14 +2215,19 @@ async function resolvePhase2Context(context: AnalysisContext, identityCard: Iden
   // Same motor/heat-tech resolution as Phase 1 (cheap re-read — already
   // resolved once, or already in context.motorTech/heatTechRaw from that
   // phase's own pause).
-  const motorFamilies = await listMotorFamilies();
-  const brandedNames = await listBrandedMotorNames();
-  const heatTechFamilies = await listHeatTechFamilies();
-  const brandedHeatTechNames = await listBrandedHeatTechNames();
-  // Same "cheap re-read" precedent as motorFamilies/brandedNames above —
-  // never module-level state (see this file's own header on why).
-  const toolTypes = await listToolTypes();
-  const correctionSignals = buildCorrectionSignals(identityCard.toolType ? await getActiveCorrectionsForToolType(identityCard.toolType) : []);
+  // 6 independent reads, batched — this whole function re-runs on every
+  // Phase 2a round AND every Phase 2b entry, so each was a sequential
+  // round-trip repeated far more often than most other "cheap re-read"
+  // spots in this file.
+  const [motorFamilies, brandedNames, heatTechFamilies, brandedHeatTechNames, toolTypes, activeCorrections] = await Promise.all([
+    listMotorFamilies(),
+    listBrandedMotorNames(),
+    listHeatTechFamilies(),
+    listBrandedHeatTechNames(),
+    listToolTypes(),
+    identityCard.toolType ? getActiveCorrectionsForToolType(identityCard.toolType) : Promise.resolve([]),
+  ]);
+  const correctionSignals = buildCorrectionSignals(activeCorrections);
 
   const registry = await resolveLegacyBrandsForIdentity(identityCard, toolTypes);
   const registryBrandTokens = registry
@@ -2291,8 +2296,10 @@ async function resolvePhase2Context(context: AnalysisContext, identityCard: Iden
     };
   }
 
-  const groomingGateRules = await listGroomingGateRules();
-  const groomingGateConfidenceThreshold = await getGroomingGateConfidenceThreshold();
+  const [groomingGateRules, groomingGateConfidenceThreshold] = await Promise.all([
+    listGroomingGateRules(),
+    getGroomingGateConfidenceThreshold(),
+  ]);
   const ourGroomingTag = deriveGroomingTag(identityCard.toolType, `${identityCard.category} ${identityCard.subcategory} ${identityCard.whatItIs}`);
   const ourIsPetGrooming = /\b(pet|dog|animal)\b/i.test(`${identityCard.category} ${identityCard.subcategory}`);
 
@@ -2560,10 +2567,15 @@ export async function runAnalysisStep(analysisId: string): Promise<AnalysisStepR
       // primary_criterion column ('motor'/'heat_technology'/'none'); a
       // genuinely unrelated product ('none') skips the requirement
       // entirely rather than being forced to answer an inapplicable question.
-      const motorFamilies = await listMotorFamilies();
-      const brandedNames = await listBrandedMotorNames();
-      const heatTechFamilies = await listHeatTechFamilies();
-      const brandedHeatTechNames = await listBrandedHeatTechNames();
+      // 4 independent reads, batched — each was previously a separate
+      // sequential round-trip on every fill-loop round (this block reruns
+      // per round, not just once per phase).
+      const [motorFamilies, brandedNames, heatTechFamilies, brandedHeatTechNames] = await Promise.all([
+        listMotorFamilies(),
+        listBrandedMotorNames(),
+        listHeatTechFamilies(),
+        listBrandedHeatTechNames(),
+      ]);
       const primaryCriterion = resolvePrimaryCriterion(identityCard, toolTypes);
       const ourMotor = primaryCriterion === "motor"
         ? await resolveOurMotorType({ motorFamily: context.motorFamily, motorTech: context.motorTech, projectId: context.projectId }, identityCard, motorFamilies)
@@ -2601,9 +2613,13 @@ export async function runAnalysisStep(analysisId: string): Promise<AnalysisStepR
       // The correction-learning signals (PART 3 of the editable-ASIN
       // feature) — fetched once here, same "cheap re-read" precedent as
       // motorFamilies/toolTypes above.
-      const correctionSignals = buildCorrectionSignals(identityCard.toolType ? await getActiveCorrectionsForToolType(identityCard.toolType) : []);
-      const groomingGateRules = await listGroomingGateRules();
-      const groomingGateConfidenceThreshold = await getGroomingGateConfidenceThreshold();
+      // 3 more independent reads, same batching reasoning as motorFamilies/etc. above.
+      const [activeCorrections, groomingGateRules, groomingGateConfidenceThreshold] = await Promise.all([
+        identityCard.toolType ? getActiveCorrectionsForToolType(identityCard.toolType) : Promise.resolve([]),
+        listGroomingGateRules(),
+        getGroomingGateConfidenceThreshold(),
+      ]);
+      const correctionSignals = buildCorrectionSignals(activeCorrections);
       const ourGroomingTag = deriveGroomingTag(identityCard.toolType, `${identityCard.category} ${identityCard.subcategory} ${identityCard.whatItIs}`);
       const ourIsPetGrooming = /\b(pet|dog|animal)\b/i.test(`${identityCard.category} ${identityCard.subcategory}`);
       const scoringCtx: CompositeScoringContext = {
@@ -3072,8 +3088,12 @@ export async function runAnalysisStep(analysisId: string): Promise<AnalysisStepR
       delete result.__phase2Stage;
       const fillRoundsUsed: number = result.__phase2FillRoundsUsed ?? 1;
       const searchesSoFarPhase2: number = result.__phase2SearchesSoFar ?? 0;
+      // Carried forward from a prior 2b pass via the "needs_round4" persist
+      // below — see the brandsNeedingLineup filter just below for why.
+      const cachedLineups: Record<string, LineupProduct[]> = result.__phase2LineupsCache ?? {};
       delete result.__phase2FillRoundsUsed;
       delete result.__phase2SearchesSoFar;
+      delete result.__phase2LineupsCache;
 
       // Speed fix — indie brand lineups (below) only ever need each
       // candidate's BRAND NAME, which mergeRainforestProductIntoCompetitor
@@ -3092,10 +3112,23 @@ export async function runAnalysisStep(analysisId: string): Promise<AnalysisStepR
       // ever add data to existing candidates, never add/remove candidates).
       const subcategoryForLineups = identityCard.subcategory || identityCard.category || "";
       const distinctBrandsForLineups: string[] = Array.from(new Set(result.competitors.map((c: any) => c.brand as string).filter(Boolean)));
+      // When a round-4 top-up (see the "needs_round4" block further down)
+      // sends this same request back through 2b a second time, this pool
+      // is the OLD, already-looked-up brands plus round 4's new ones —
+      // buildIndieBrandLineups itself has no memoization (unlike
+      // enrichCompetitorsWithRainforest's verified_by_rainforest
+      // short-circuit), so without this filter every already-resolved
+      // brand's lineup got a fully redundant real Rainforest search on the
+      // retry pass. Only the genuinely new brands need fetching here.
+      const brandsNeedingLineup = distinctBrandsForLineups.filter(brand => !(brand in cachedLineups));
       const indieLineupsPromise = buildIndieBrandLineups(
-        distinctBrandsForLineups.map(brand => ({ brand, subcategory: subcategoryForLineups })),
+        brandsNeedingLineup.map(brand => ({ brand, subcategory: subcategoryForLineups })),
         remainingRainforestBudget(startTime)
-      );
+      ).then(fresh => {
+        const merged = new Map<string, LineupProduct[]>(Object.entries(cachedLineups));
+        fresh.forEach((lineup, brand) => merged.set(brand, lineup));
+        return merged;
+      });
 
       if (hasRainforestKey) {
         result.competitors = await enrichCompetitorsWithRainforest(result.competitors, toolTypes, identityCard.toolType, startTime);
@@ -3200,6 +3233,10 @@ export async function runAnalysisStep(analysisId: string): Promise<AnalysisStepR
           __phase2Stage: "needs_round4",
           __phase2Fill: { round: 4, searchesSoFar: searchesSoFarPhase2 },
           __phase2Pool: enrichedPool,
+          // Carried into the second 2b pass's cachedLineups above so its
+          // brandsNeedingLineup filter can skip every brand already
+          // resolved here instead of re-fetching the whole set.
+          __phase2LineupsCache: Object.fromEntries(indieLineups),
         }, webSearchCount);
         return { analysisId, phase: 2, status: "running", stepResult: null, totalSearches: webSearchCount };
       }

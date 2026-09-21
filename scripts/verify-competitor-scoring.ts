@@ -98,6 +98,27 @@ async function main() {
   const dedupedShort = dedupeToOnePerBrand(onlyTwoBrands, 5);
   assert(dedupedShort.length === 2, `when fewer distinct brands than the limit exist, a second candidate from an already-used brand IS allowed in (got ${dedupedShort.length})`);
 
+  // Regression check — brandKey used to be a plain .trim().toLowerCase(),
+  // which treated "Bio Ionic" and "Bio-Ionic" (or "T3"/"T3 Micro") as
+  // different brands, letting a spelling variant silently consume a 2nd
+  // slot that should have gone to a genuinely different competitor. Now
+  // keyed on normalizeBrandToken, same as every other brand-identity
+  // comparison in the pipeline.
+  const punctuationVariants = [
+    { brand: "Bio Ionic", score: 0.9 },
+    { brand: "Bio-Ionic", score: 0.8 }, // same brand, hyphen variant — must dedupe away
+    { brand: "T3", score: 0.7 },
+  ];
+  // limit === the true distinct-brand count (2: "bio ionic" + "t3") — same
+  // "no spare slots to top up from" setup as the very first dedupe case
+  // above, so this only passes if the hyphen variant is correctly folded
+  // into the SAME brand rather than topping up a 3rd slot.
+  const dedupedVariants = dedupeToOnePerBrand(punctuationVariants, 2);
+  const bioIonicCount = dedupedVariants.filter(c => /bio/i.test(c.brand)).length;
+  assert(bioIonicCount === 1, `"Bio Ionic" and "Bio-Ionic" normalize to the same brand and dedupe to 1 (got ${bioIonicCount})`);
+  assert(dedupedVariants.length === 2, `punctuation variant of an already-seen brand does not count as a distinct brand (got ${dedupedVariants.length} distinct)`);
+  assert(dedupedVariants.some(c => c.brand === "Bio Ionic"), "the higher-scoring spelling variant (\"Bio Ionic\", 0.9) is the one kept");
+
   console.log(`\n${passes} passed, ${failures} failed`);
   process.exit(failures > 0 ? 1 : 0);
 }

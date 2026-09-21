@@ -4,6 +4,7 @@
 // comparable feature/spec overlap as a tie-breaker. Plain TS, no
 // server-only imports — fully offline-testable.
 import type { MotorMatchTier } from "./motor-taxonomy";
+import { normalizeBrandToken } from "./legacy-brand-discovery";
 
 export interface MatchingWeights {
   motor: number;
@@ -233,7 +234,7 @@ export function dedupeToOnePerBrand<T extends { brand?: string }>(candidates: T[
   const leftover: T[] = [];
 
   for (const c of candidates) {
-    const brandKey = (c.brand || "").trim().toLowerCase();
+    const brandKey = normalizeBrandToken(c.brand || "");
     if (brandKey && !seenBrands.has(brandKey)) {
       seenBrands.add(brandKey);
       firstPass.push(c);

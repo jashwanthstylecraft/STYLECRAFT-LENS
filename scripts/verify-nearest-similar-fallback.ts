@@ -83,6 +83,7 @@ const CLIPPER_IDENTITY: any = {
 
 async function main() {
   const { selectByCompositeScore, filterCandidatesByCategoryAndIdentity } = await import("../lib/analysisEngine");
+  const { listGroomingGateRules, getGroomingGateConfidenceThreshold } = await import("../lib/db/grooming-gate-rules");
 
   const toolTypes = makeToolTypesFixture();
   const motorFamilies = makeMotorFamiliesFixture();
@@ -96,6 +97,15 @@ async function main() {
     ourSpecs: { rpm: null, runTimeMinutes: null, cordless: null, buildMaterial: null, bladeTech: null },
     weights: { motor: 0.45, price: 0.35, feature: 0.2 },
     keyDiff: null,
+    // CompositeScoringContext also requires the grooming-gate fields now —
+    // the real seeded default rules (same ones production/memoryDb starts
+    // with), not an empty array: an empty rules list makes 1B's
+    // required_keyword check always fail (nothing to match), rejecting
+    // every candidate outright rather than "passing everything through".
+    groomingGateRules: await listGroomingGateRules(),
+    groomingGateConfidenceThreshold: await getGroomingGateConfidenceThreshold(),
+    ourGroomingTag: null,
+    ourIsPetGrooming: false,
   };
   const TARGET_PRICE = 300;
 
@@ -147,7 +157,7 @@ async function main() {
       { name: "TestBrand Rho Clipper", brand: "TestBrand", price_raw: 305, asin: "B0TEST0007", top_feature_summary: "Brushless" },
       { name: "TestBrand Sigma Trimmer", brand: "TestBrand", price_raw: 150, asin: "B0TEST0008", top_feature_summary: "Wrong tool type — must never survive" },
     ];
-    const filtered = filterCandidatesByCategoryAndIdentity(mixedCandidates, "emerging", CLIPPER_IDENTITY, toolTypes);
+    const filtered = filterCandidatesByCategoryAndIdentity(mixedCandidates, "emerging", CLIPPER_IDENTITY, toolTypes, ctx.groomingGateRules);
     assert(filtered.length === 1 && filtered[0].name === "TestBrand Rho Clipper", "filterCandidatesByCategoryAndIdentity strips the wrong-tool-type candidate before it ever reaches the pool");
 
     // Even if a wrong-tool-type candidate somehow slipped into the pool
@@ -170,9 +180,9 @@ async function main() {
     // slot) — limit must be smaller than the pool for this to be a real
     // test of exclusion, not just "everything fit anyway."
     const samebrandPool = [
-      { name: "OneBrand Model A", brand: "OneBrand", price_raw: 700, asin: "B0TEST0010" },
-      { name: "OneBrand Model B", brand: "OneBrand", price_raw: 650, asin: "B0TEST0011" },
-      { name: "TwoBrand Model C", brand: "TwoBrand", price_raw: 600, asin: "B0TEST0012" },
+      { name: "OneBrand Clipper Model A", brand: "OneBrand", price_raw: 700, asin: "B0TEST0010" },
+      { name: "OneBrand Clipper Model B", brand: "OneBrand", price_raw: 650, asin: "B0TEST0011" },
+      { name: "TwoBrand Clipper Model C", brand: "TwoBrand", price_raw: 600, asin: "B0TEST0012" },
     ];
     const legacyNearest = selectByCompositeScore(samebrandPool, TARGET_PRICE, "legacy", CLIPPER_IDENTITY, 2, ctx, { nearestSimilarMode: true, allowStaticFallbackTopup: false });
     const brandsSeen = legacyNearest.map((c: any) => c.brand);
@@ -183,7 +193,7 @@ async function main() {
   console.log("\n[5] Abundant fixture — normal selection alone fills every slot, nearest-similar path never runs, output unchanged");
   {
     const abundantPool = Array.from({ length: 5 }, (_, i) => ({
-      name: `AbundantBrand Model ${i}`,
+      name: `AbundantBrand Clipper Model ${i}`,
       brand: `AbundantBrand${i}`,
       price_raw: TARGET_PRICE + (i - 2) * 10,
       asin: `B0ABUND000${i}`,
