@@ -22,7 +22,6 @@ import {
   Mic
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { Badge, type BadgeTone } from "@/components/ui/Badge";
 import { Logo, Wordmark } from "@/components/ui/Logo";
 import { PillNav } from "@/components/ui/PillNav";
 
@@ -59,15 +58,6 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
         ]
       : []),
   ];
-
-  const planTones: Record<string, BadgeTone> = {
-    FREE: "neutral",
-    PRO: "accent",
-    AGENCY: "success",
-    ENTERPRISE: "warning",
-  };
-
-  const currentPlan = user?.plan || "FREE";
 
   const isItemActive = (href: string) =>
     href === "/dashboard" ? pathname === "/dashboard" : pathname === href || pathname.startsWith(href + "/");
@@ -148,16 +138,8 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
           </div>
         </nav>
 
-        {/* User / Plan Section at Bottom */}
+        {/* User Section at Bottom */}
         <div className="p-4 border-t border-border bg-surface-2/40 space-y-3">
-          {/* Plan Badge */}
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-text-muted">Subscription</span>
-            <Badge tone={planTones[currentPlan] ?? "neutral"} uppercase className="rounded-full">
-              {currentPlan}
-            </Badge>
-          </div>
-
           {/* User Profile Summary */}
           {user && (
             <div className="flex items-center gap-2.5 p-1 rounded-lg">

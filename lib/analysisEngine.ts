@@ -1942,6 +1942,30 @@ async function enrichCompetitorsWithRainforest(competitors: any[], toolTypes: To
 // whatever the AI guessed — kept in the same {headline,...} shape the UI
 // already renders, but the text itself is never AI-invented once a real
 // listing is verified.
+// Marketplace/seller labels that sometimes show up in a "Brand" attribute
+// row or get confused with the actual manufacturer by the AI discovery
+// step (buildPhase1Prompt/buildPhase2Prompt) — never a real competitor
+// brand, so never trusted as one from either source.
+const MARKETPLACE_BRAND_BLOCKLIST = new Set(["amazon", "amazon com", "amazon basics", "generic", "unbranded", "n a"]);
+
+function isTrustworthyBrand(brand: string | null | undefined): boolean {
+  if (!brand) return false;
+  return !MARKETPLACE_BRAND_BLOCKLIST.has(normalizeBrandToken(brand));
+}
+
+// The AI-discovered brand (c.brand) occasionally comes back as "Amazon" —
+// e.g. when a listing shows "Sold by Amazon.com" and the model conflates
+// the marketplace/seller with the actual manufacturer. Once a real
+// Rainforest listing is resolved, its own brand/manufacturer fields are
+// ground truth and should replace a bad AI guess exactly like every other
+// field below already does (key_features, description, specs, ...) —
+// this was previously the one field left untouched by the `...c` spread.
+function resolveVerifiedBrand(aiBrand: string | null | undefined, product: RainforestProduct): string | null | undefined {
+  if (isTrustworthyBrand(product.brand)) return product.brand;
+  if (!isTrustworthyBrand(aiBrand) && isTrustworthyBrand(product.manufacturer)) return product.manufacturer;
+  return aiBrand;
+}
+
 function mergeRainforestProductIntoCompetitor(c: any, product: RainforestProduct): any {
   const realFeatures = product.feature_bullets.slice(0, 6).map(bullet => ({
     headline: bullet,
@@ -1953,6 +1977,7 @@ function mergeRainforestProductIntoCompetitor(c: any, product: RainforestProduct
   return {
     ...c,
     asin: product.asin,
+    brand: resolveVerifiedBrand(c.brand, product),
     price: product.price,
     price_raw: product.price_raw,
     last_updated: product.last_updated,
@@ -4527,7 +4552,7 @@ Return this EXACT JSON schema:
   "competitors": [
     {
       "name": "Full Product Name (specific SKU/Model)",
-      "brand": "Brand Name",
+      "brand": "Actual manufacturer/brand name, e.g. 'Wahl' — never 'Amazon' or 'Amazon.com' even if the listing shows 'Sold by Amazon.com'",
       "tier": "legacy",
       "asin": "BXXXXXXXXX",
       "amazon_url": "https://www.amazon.com/dp/BXXXXXXXXX",
@@ -4645,7 +4670,7 @@ Return this EXACT JSON schema:
   "competitors": [
     {
       "name": "Full Product Name (specific SKU/Model)",
-      "brand": "Brand Name",
+      "brand": "Actual manufacturer/brand name, e.g. 'JRL' — never 'Amazon' or 'Amazon.com' even if the listing shows 'Sold by Amazon.com'",
       "tier": "emerging",
       "asin": "BXXXXXXXXX",
       "amazon_url": "https://www.amazon.com/dp/BXXXXXXXXX",

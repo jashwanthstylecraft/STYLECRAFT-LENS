@@ -1,14 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { 
-  Settings, 
-  User, 
-  CreditCard, 
-  Key, 
-  ShieldAlert, 
+import {
+  Settings,
+  User,
+  Key,
+  ShieldAlert,
   CheckCircle,
-  TrendingUp,
   Sliders
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,7 +18,7 @@ import { MIN_PASSWORD_LENGTH } from "@/lib/password-policy";
 
 export default function SettingsPage() {
   const { user, refreshSession } = useAuth();
-  const [activeSubTab, setActiveSubTab] = useState<"profile" | "billing" | "keys">("profile");
+  const [activeSubTab, setActiveSubTab] = useState<"profile" | "keys">("profile");
 
   const [userName, setUserName] = useState(user?.name || "Dev Admin");
   const [userEmail, setUserEmail] = useState(user?.email || "developer@stylecraftlens.com");
@@ -30,13 +28,6 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
-
-  const planLimits = {
-    FREE: { competitors: 5, analyses: 3, projects: 1, reports: 3 },
-    PRO: { competitors: 50, analyses: 25, projects: 10, reports: 20 },
-    AGENCY: { competitors: "Unlimited", analyses: "Unlimited", projects: "Unlimited", reports: "Unlimited" },
-    ENTERPRISE: { competitors: "Unlimited", analyses: "Unlimited", projects: "Unlimited", reports: "Unlimited" },
-  };
 
   const handleUpdateProfile = (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,29 +71,6 @@ export default function SettingsPage() {
     }
   };
 
-  const handleUpgradePlan = async (targetPlan: "FREE" | "PRO" | "AGENCY") => {
-    try {
-      // Direct update org plan in DB/Memory
-      const res = await fetch(`/api/competitors`, { method: "GET" }); // dummy call to assert connection
-      
-      // We will perform a local mock plan change in DB via a PATCH org call or simply mock it for user session
-      // For immediate response, let's notify the user
-      toast.success(`Upgrading workspace subscription to ${targetPlan}...`);
-      
-      // Let's call a mock update or trigger status reload
-      setTimeout(() => {
-        toast.success(`Plan updated to ${targetPlan}!`);
-        // Refresh session to pull updated plan
-        refreshSession();
-      }, 1000);
-    } catch (e) {
-      toast.error("Failed to update plan");
-    }
-  };
-
-  const currentPlan = user?.plan || "FREE";
-  const limits = planLimits[currentPlan as keyof typeof planLimits] || planLimits.FREE;
-
   return (
     <div className="space-y-6">
       {/* Title */}
@@ -117,7 +85,6 @@ export default function SettingsPage() {
         <div className="lg:col-span-3 flex flex-col gap-1 p-2 bg-surface-2 border border-border rounded-xl">
           {[
             { id: "profile", label: "User Profile", icon: User },
-            { id: "billing", label: "Plan & Billing", icon: CreditCard },
             { id: "keys", label: "API Configuration", icon: Key },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -235,94 +202,6 @@ export default function SettingsPage() {
                 </form>
               </MagicBentoCard>
             </MagicBentoSection>
-          )}
-
-          {/* PLAN & BILLING TAB */}
-          {activeSubTab === "billing" && (
-            <div className="space-y-6 text-xs">
-              <div>
-                <h2 className="text-sm font-bold text-text-primary font-display">Plan & Workspace Limits</h2>
-                <p className="text-[11px] text-text-muted mt-0.5">Monitor resource consumption limits and switch plans.</p>
-              </div>
-
-              {/* Limits progress bars */}
-              <MagicBentoCard className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
-                <div className="space-y-1.5">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="font-semibold text-text-primary">Competitor Entries</span>
-                    <span className="font-mono text-text-muted">4 / {limits.competitors}</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-surface-1 rounded-full overflow-hidden border border-border">
-                    <div 
-                      className="h-full bg-accent" 
-                      style={{ width: typeof limits.competitors === "number" ? `${(4 / limits.competitors) * 100}%` : "15%" }}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="font-semibold text-text-primary">Analyses Completed (Month)</span>
-                    <span className="font-mono text-text-muted">1 / {limits.analyses}</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-surface-1 rounded-full overflow-hidden border border-border">
-                    <div 
-                      className="h-full bg-accent" 
-                      style={{ width: typeof limits.analyses === "number" ? `${(1 / limits.analyses) * 100}%` : "5%" }}
-                    />
-                  </div>
-                </div>
-              </MagicBentoCard>
-
-              {/* Pricing grid */}
-              <div className="space-y-3.5 pt-4">
-                <h3 className="font-bold text-text-primary">Choose Subscription Plan</h3>
-                <MagicBentoSection className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {[
-                    { plan: "FREE", price: "$0", desc: "For hobbyists and individual stylists.", badge: "FREE" },
-                    { plan: "PRO", price: "$49/mo", desc: "For professional barbers and salon leads.", badge: "PRO" },
-                    { plan: "AGENCY", price: "$149/mo", desc: "For large agencies and brands.", badge: "AGENCY" }
-                  ].map((pkg) => {
-                    const isCurrent = currentPlan === pkg.plan;
-                    return (
-                      <MagicBentoCard
-                        key={pkg.plan}
-                        className={`p-4 flex flex-col justify-between space-y-4 ${
-                          isCurrent ? "border-accent bg-accent-bg/10 shadow-sm" : ""
-                        }`}
-                      >
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-text-primary">{pkg.plan}</span>
-                            {isCurrent && (
-                              <span className="text-[8px] bg-accent/15 border border-accent/25 text-accent-text px-1.5 py-0.5 rounded uppercase font-semibold">
-                                Current
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-lg font-black text-text-primary mt-1">{pkg.price}</p>
-                          <p className="text-[10px] text-text-secondary leading-normal">{pkg.desc}</p>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => handleUpgradePlan(pkg.plan as any)}
-                          disabled={isCurrent}
-                          className={`w-full py-1.5 rounded-lg text-[10px] font-bold transition-all ${
-                            isCurrent 
-                              ? "bg-surface-3 text-text-muted cursor-not-allowed" 
-                              : "bg-accent hover:bg-accent-hover text-white"
-                          }`}
-                        >
-                          {isCurrent ? "Active Plan" : `Upgrade to ${pkg.plan}`}
-                        </button>
-                      </MagicBentoCard>
-                    );
-                  })}
-                </MagicBentoSection>
-              </div>
-
-            </div>
           )}
 
           {/* API CONFIGURATION TAB */}
