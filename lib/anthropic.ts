@@ -2,13 +2,23 @@ import Anthropic from "@anthropic-ai/sdk";
 import { logCall } from "./obs";
 
 const apiKey = process.env.ANTHROPIC_API_KEY || "";
+// Only needed for an org-level API key not scoped to a single workspace —
+// confirmed live: such a key gets a 400 ("This API key is not scoped to a
+// workspace...") on every call without this header. A workspace-scoped key
+// (the Console's default "Create Key" flow under a specific workspace)
+// never needs this — left unset in that case.
+const workspaceId = process.env.ANTHROPIC_WORKSPACE_ID || "";
 
 // maxRetries: 0 — same reasoning as lib/openai.ts: this app already has its
 // own deliberate, budget-aware retry/fallback logic (runClaudeWebSearch's
 // deadline below, and lib/analysisEngine.ts's withAiFallback chain), so the
 // SDK's automatic retries would only double up on a timed-out call and blow
 // through Vercel's 60s cap.
-export const anthropic = new Anthropic({ apiKey: apiKey || "mock-key-for-development", maxRetries: 0 });
+export const anthropic = new Anthropic({
+  apiKey: apiKey || "mock-key-for-development",
+  maxRetries: 0,
+  ...(workspaceId ? { defaultHeaders: { "anthropic-workspace-id": workspaceId } } : {}),
+});
 
 // Primary AI provider — analysis (competitor discovery, Phase 1/2/3) and
 // GTM/TDS/Content Form field generation try Claude first now; OpenAI is the
