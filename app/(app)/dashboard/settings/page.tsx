@@ -216,9 +216,35 @@ export default function SettingsPage() {
                 <div className="flex gap-3.5 items-start">
                   <Sliders className="w-5 h-5 text-accent shrink-0 mt-0.5" />
                   <div className="space-y-1 leading-relaxed">
+                    <p className="font-semibold text-text-primary">Anthropic Claude API Key (primary)</p>
+                    <p className="text-text-secondary">
+                      Powers competitive analysis and GTM/TDS/Content Form generation — supply a valid `ANTHROPIC_API_KEY` to connect with Claude (includes built-in web search — no separate search key needed). OpenAI is used as a fallback if this is unset.
+                    </p>
+                    <pre className="p-2 border border-border bg-surface-1 text-mono text-[10px] text-accent-text rounded mt-2 select-all w-fit">
+                      {"ANTHROPIC_API_KEY=\"sk-ant-...\""}
+                    </pre>
+                  </div>
+                </div>
+
+                <div className="flex gap-3.5 items-start pt-3.5 border-t border-border/60">
+                  <Sliders className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+                  <div className="space-y-1 leading-relaxed">
+                    <p className="font-semibold text-text-primary">OpenAI API Key (fallback)</p>
+                    <p className="text-text-secondary">
+                      Used automatically whenever Claude is unavailable or fails — supply a valid `OPENAI_API_KEY` to keep this fallback tier live.
+                    </p>
+                    <pre className="p-2 border border-border bg-surface-1 text-mono text-[10px] text-accent-text rounded mt-2 select-all w-fit">
+                      {"OPENAI_API_KEY=\"sk-...\""}
+                    </pre>
+                  </div>
+                </div>
+
+                <div className="flex gap-3.5 items-start pt-3.5 border-t border-border/60">
+                  <Sliders className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+                  <div className="space-y-1 leading-relaxed">
                     <p className="font-semibold text-text-primary">Google Gemini API Key</p>
                     <p className="text-text-secondary">
-                      To run live market audits, supply a valid `GEMINI_API_KEY` to connect with Gemini (includes built-in Google Search grounding — no separate search key needed).
+                      Currently disabled app-wide (expired key) — kept as a last-resort fallback behind Claude/OpenAI. To re-enable, supply a valid `GEMINI_API_KEY` and clear the kill-switch in `lib/gemini.ts`.
                     </p>
                     <pre className="p-2 border border-border bg-surface-1 text-mono text-[10px] text-accent-text rounded mt-2 select-all w-fit">
                       {"GEMINI_API_KEY=\"...\""}

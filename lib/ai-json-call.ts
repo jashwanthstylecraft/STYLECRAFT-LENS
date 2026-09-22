@@ -1,22 +1,32 @@
-// Shared OpenAI-then-Gemini JSON-generation call, extracted from
+// Shared Claude-then-OpenAI-then-Gemini JSON-generation call, extracted from
 // lib/gtm-generate.ts so lib/tds-generate.ts doesn't need a second copy of
 // the same fallback logic. Both callers want the same shape: a system
 // instruction + user content in, a parsed `{fieldId: {answer, source}}`
-// object out, or null if both providers are unavailable/fail.
+// object out, or null if every provider is unavailable/fails.
 import { genAI, hasGeminiKey, GEMINI_MODEL, cleanJsonString } from "./gemini";
 import { callOpenAiForJson, hasOpenAIKey } from "./openai";
+import { callClaudeForJson, hasAnthropicKey } from "./anthropic";
 
-// Generic OpenAI-then-Gemini JSON call — returns whatever shape the system
-// instruction's schema describes, or null if both providers are
-// unavailable/fail. callAiForFields (below) is the {fieldId:{answer,source}}
-// specialization of this for GTM/TDS field generation. OpenAI is primary
-// (see lib/openai.ts); Gemini is the fallback.
+// Generic Claude-then-OpenAI-then-Gemini JSON call — returns whatever shape
+// the system instruction's schema describes, or null if every provider is
+// unavailable/fails. callAiForFields (below) is the {fieldId:{answer,source}}
+// specialization of this for GTM/TDS field generation. Claude is primary
+// (see lib/anthropic.ts); OpenAI is the configured fallback (see
+// lib/openai.ts); Gemini remains behind that.
 export async function callAiForJson<T = any>(
   systemInstruction: string,
   userContent: string,
   label: string,
   opts?: { webSearch?: boolean; maxToolCalls?: number; timeoutMs?: number; projectId?: string }
 ): Promise<T | null> {
+  if (hasAnthropicKey) {
+    const result = await callClaudeForJson<T>(systemInstruction, userContent, label, {
+      timeoutMs: opts?.timeoutMs ?? 25_000,
+      webSearch: opts?.webSearch,
+      projectId: opts?.projectId,
+    });
+    if (result) return result;
+  }
   if (hasOpenAIKey) {
     const result = await callOpenAiForJson<T>(systemInstruction, userContent, label, {
       timeoutMs: opts?.timeoutMs ?? 25_000,

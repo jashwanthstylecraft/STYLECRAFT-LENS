@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { hasAnthropicKey, ANTHROPIC_MODEL } from "@/lib/anthropic";
 import { hasOpenAIKey, OPENAI_MODEL } from "@/lib/openai";
 import { hasGeminiKey } from "@/lib/gemini";
 import { hasRainforestKey } from "@/lib/rainforest";
@@ -15,11 +16,14 @@ import { validateEnvOnce } from "@/lib/env";
 export async function GET() {
   const env = validateEnvOnce();
   return NextResponse.json({
-    ok: hasOpenAIKey && env.ok,
+    // Claude is primary now (see lib/anthropic.ts); OpenAI is the configured
+    // fallback, so the app is functionally healthy if either is present.
+    ok: (hasAnthropicKey || hasOpenAIKey) && env.ok,
+    anthropic: hasAnthropicKey,
     openai: hasOpenAIKey,
     gemini: hasGeminiKey,
     rainforest: hasRainforestKey,
-    model: OPENAI_MODEL,
+    model: hasAnthropicKey ? ANTHROPIC_MODEL : OPENAI_MODEL,
     env: { ok: env.ok, errorCount: env.errors.length, warningCount: env.warnings.length },
   });
 }

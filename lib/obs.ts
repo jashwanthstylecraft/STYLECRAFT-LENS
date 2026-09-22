@@ -40,6 +40,6 @@ export interface LogCallFields {
   source?: string;
 }
 
-export function logCall(scope: "rainforest" | "review-tier" | "generation-pipeline" | "openai" | "source-doc-upload" | "document-field-resolve", fields: LogCallFields): void {
+export function logCall(scope: "rainforest" | "review-tier" | "generation-pipeline" | "openai" | "anthropic" | "source-doc-upload" | "document-field-resolve", fields: LogCallFields): void {
   console.warn(`[${scope}] ${JSON.stringify(fields)}`);
 }
