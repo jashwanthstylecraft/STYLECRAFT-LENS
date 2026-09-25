@@ -97,7 +97,7 @@ function SignInForm() {
     <div
       ref={cardRef}
       style={{ transformStyle: "preserve-3d" }}
-      className="w-full max-w-sm p-6 md:p-8 cinema-glass rounded-2xl shadow-2xl relative overflow-hidden text-xs space-y-6"
+      className="w-full max-w-sm p-6 md:p-8 bg-surface-2 border border-border rounded-2xl shadow-2xl relative overflow-hidden text-xs space-y-6"
     >
       <div className="absolute -top-24 -left-24 w-48 h-48 rounded-full bg-accent/15 blur-3xl" />
 

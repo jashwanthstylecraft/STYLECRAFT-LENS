@@ -2,7 +2,7 @@
 "use client";
 
 import { Fragment, useEffect, useRef, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -30,7 +30,9 @@ import {
   Mail,
   BookmarkPlus,
   Star,
-  Minus
+  Minus,
+  Maximize2,
+  Minimize2
 } from "lucide-react";
 import { toast } from "sonner";
 import { downloadTabPDF, downloadReportPDF } from "@/lib/export-pdf";
@@ -44,6 +46,7 @@ import { ComparisonChartPicker, type ComparisonChartSlot } from "@/components/an
 import { TDS_FIELD_SCHEMA, TDS_SECTIONS } from "@/lib/tds-field-schema";
 import { isRealAnswer, isAwaitingInternalInput, isNotDeterminable, type FillReport } from "@/lib/field-answer-state";
 import { ProjectGenerationProgress } from "@/components/projects/ProjectGenerationProgress";
+import { ProgressPanel } from "@/components/analyze/ProgressPanel";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { MagicBentoSection, MagicBentoCard } from "@/components/ui/MagicBento";
 import { useGlassMode, GlassModeOverride } from "@/stores/backgroundStageStore";
@@ -61,10 +64,25 @@ type ReportTab = Exclude<Tab, "sources" | "content-form">;
 export default function ProjectDetailPage() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
+  // Competitive-analysis progress banner — set from the ?analysisId= query
+  // param right after the analyze form redirects here (the common case), or
+  // falls back to project.activeAnalysisId (lib/db/analyses.ts's
+  // getLatestAnalysisForProject) once fetchProjectDetails resolves, so a
+  // page reload or later revisit still resumes showing it. Reuses
+  // ProgressPanel as-is — the same component the standalone analyze page
+  // mounts, not a reimplementation.
+  const [activeAnalysisId, setActiveAnalysisId] = useState<string | null>(() => searchParams.get("analysisId"));
   const [project, setProject] = useState<any>(null);
   const [reports, setReports] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<Tab>("competitive-analysis");
+  // Full-screen tab view — hides the left "Product specs & context" panel
+  // and expands the tab workspace (Competitive Analysis/Pricing/GTM/Content
+  // Form/Sources) to the full width of the main content area, for tabs with
+  // a lot of dense field content. Purely a layout toggle, not the browser
+  // Fullscreen API — the dashboard chrome (Sidebar/Topbar) stays visible.
+  const [tabFullScreen, setTabFullScreen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<any>(null);
   const [linkingReport, setLinkingReport] = useState(false);
   const [pipelineState, setPipelineState] = useState<any>(null);
@@ -117,7 +135,11 @@ export default function ProjectDetailPage() {
       }
       const data = await res.json();
       setProject(data.project);
-      
+      // Resumability fallback — only takes over when nothing (the URL's
+      // ?analysisId= or an earlier fetch) has already set it, so this never
+      // resurrects a banner just cleared by onComplete/onError/onCancelled.
+      setActiveAnalysisId(prev => prev ?? data.project.activeAnalysisId ?? null);
+
       // Load reports linked to this project
       const reps = data.project.reports || [];
       setReports(reps);
@@ -292,9 +314,11 @@ export default function ProjectDetailPage() {
       </div>
 
       {/* Main layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
-        {/* Left Side: Product Specifications (4/12) */}
+      <div className={`grid grid-cols-1 gap-6 items-start ${tabFullScreen ? "" : "lg:grid-cols-12"}`}>
+
+        {/* Left Side: Product Specifications (4/12) — hidden in full-screen
+            tab view so the tab workspace can use the freed-up width. */}
+        {!tabFullScreen && (
         <div className="lg:col-span-4 bg-surface-2 border border-border rounded-xl p-5 space-y-4">
           <h2 className="text-xs font-bold text-text-muted uppercase tracking-wider">Product specs & context</h2>
           
@@ -351,9 +375,11 @@ export default function ProjectDetailPage() {
             )}
           </div>
         </div>
+        )}
 
-        {/* Right Side: Linked Reports Workspace (8/12) */}
-        <div className="lg:col-span-8 space-y-6">
+        {/* Right Side: Linked Reports Workspace (8/12, or the full width in
+            full-screen tab view) */}
+        <div className={tabFullScreen ? "space-y-6" : "lg:col-span-8 space-y-6"}>
           {/* Project Outputs & Document Generators Bar — renders regardless
               of whether a report is linked; Sales Kit still needs one for
               its "Active Report" cross-references, but TDS/GTM download
@@ -430,6 +456,14 @@ export default function ProjectDetailPage() {
               >
                 <Mail className="w-3.5 h-3.5" />
               </button>
+              <button
+                type="button"
+                onClick={() => setTabFullScreen(v => !v)}
+                className="shrink-0 inline-flex items-center justify-center text-text-muted hover:text-accent transition-colors"
+                title={tabFullScreen ? "Exit full screen" : "View full screen"}
+              >
+                {tabFullScreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+              </button>
             </div>
 
             {/* Tab Content Canvas — a fully opaque bg-surface-2 box, so
@@ -487,6 +521,23 @@ export default function ProjectDetailPage() {
             </div>
             </GlassModeOverride>
           </div>
+
+          {/* Competitive analysis banner — runs independently of, and
+              concurrently with, the TDS/GTM pipeline below. Reuses
+              ProgressPanel unmodified (same component the standalone
+              analyze page mounts), so pause-and-ask, brand-search progress,
+              cancel, and retry all keep working here. Tabs (Sources,
+              Content Form, etc.) stay reachable the whole time — this is
+              just another page-level banner, not a blocking view. */}
+          {activeAnalysisId && (
+            <ProgressPanel
+              analysisId={activeAnalysisId}
+              productName={project?.productName || project?.name || ""}
+              onComplete={() => { setActiveAnalysisId(null); fetchProjectDetails(); }}
+              onError={(msg: string) => { toast.error(msg || "Analysis failed"); setActiveAnalysisId(null); }}
+              onCancelled={() => { toast("Analysis cancelled"); setActiveAnalysisId(null); }}
+            />
+          )}
 
           {/* TDS + GTM live independently of whether a report is linked —
               every project now gets this pipeline automatically on
@@ -588,10 +639,16 @@ function ReportTabContent({
 
   const tabData = report[dataKey] || {};
 
-  // Sync local editing state when tab or report changes
+  // Sync local editing state when tab or report changes. Pricing starts in
+  // editing mode by default — its interactive Tariff & Landed Cost
+  // Calculator (TariffPriceStackEditor) previously only rendered once the
+  // user clicked "Edit", which meant clicking it every single time just to
+  // use the calculator. Competitive Analysis/Go To Market keep the normal
+  // view-first behavior (their view modes carry real read-only content
+  // Pricing's editing form doesn't lose anything by skipping).
   useEffect(() => {
     setLocalData(tabData);
-    setEditing(false);
+    setEditing(activeTab === "pricing");
   }, [report.id, activeTab]);
 
   async function saveEdit() {
@@ -1129,6 +1186,50 @@ function TariffPriceStackSummary({ tps }: { tps: TariffPriceStackData }) {
 // PRICING TAB VIEW & EDIT
 // ────────────────────────────────────────────────────────────────────────────
 function PricingTab({ data, editing, localData, setLocalData }: any) {
+  const prices = data.competitors_pricing || [];
+
+  // Competitor Price Index — read-only market data (no edit concept of its
+  // own), rendered in both editing and view mode so it's always visible
+  // alongside the (now default-open, see ReportTabContent's effect above)
+  // interactive Tariff & Landed Cost Calculator instead of requiring a
+  // separate non-editing view just to see it.
+  const competitorPriceIndex = (
+    <MagicBentoCard className="p-4 space-y-2">
+      <h4 className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Competitor Price Index</h4>
+      <div className="border border-border rounded-xl overflow-hidden">
+        <table className="w-full border-collapse text-left">
+          <thead>
+            <tr className="bg-surface-3/50 border-b border-border text-[10px] text-text-muted uppercase font-mono">
+              <th className="p-3">Competitor Name</th>
+              <th className="p-3">Price Point</th>
+              <th className="p-3">Market Tier</th>
+            </tr>
+          </thead>
+          <tbody>
+            {prices.map((p: any, i: number) => (
+              <tr key={i} className="border-b border-border hover:bg-surface-3/10 transition-colors">
+                <td className="p-3 font-semibold text-text-primary">{p.name}</td>
+                <td className="p-3 font-mono tabular-nums text-accent font-bold">{p.price || "—"}</td>
+                <td className="p-3">
+                  <span className={`inline-flex px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${
+                    p.tier === "large" ? "bg-indigo-950 text-indigo-300" : "bg-emerald-950 text-emerald-300"
+                  }`}>
+                    {p.tier}
+                  </span>
+                </td>
+              </tr>
+            ))}
+            {prices.length === 0 && (
+              <tr>
+                <td colSpan={3} className="p-4 text-center text-text-muted">No competitor pricing mapped.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </MagicBentoCard>
+  );
+
   if (editing) {
     return (
       <div className="space-y-4">
@@ -1160,11 +1261,11 @@ function PricingTab({ data, editing, localData, setLocalData }: any) {
             onChange={v => setLocalData({ ...localData, tariff_price_stack: v })}
           />
         </MagicBentoCard>
+
+        {competitorPriceIndex}
       </div>
     );
   }
-
-  const prices = data.competitors_pricing || [];
 
   return (
     <MagicBentoSection className="grid grid-cols-1 gap-4 text-xs">
@@ -1175,40 +1276,7 @@ function PricingTab({ data, editing, localData, setLocalData }: any) {
 
       {data.tariff_price_stack && <TariffPriceStackSummary tps={data.tariff_price_stack} />}
 
-      <MagicBentoCard className="p-4 space-y-2">
-        <h4 className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Competitor Price Index</h4>
-        <div className="border border-border rounded-xl overflow-hidden">
-          <table className="w-full border-collapse text-left">
-            <thead>
-              <tr className="bg-surface-3/50 border-b border-border text-[10px] text-text-muted uppercase font-mono">
-                <th className="p-3">Competitor Name</th>
-                <th className="p-3">Price Point</th>
-                <th className="p-3">Market Tier</th>
-              </tr>
-            </thead>
-            <tbody>
-              {prices.map((p: any, i: number) => (
-                <tr key={i} className="border-b border-border hover:bg-surface-3/10 transition-colors">
-                  <td className="p-3 font-semibold text-text-primary">{p.name}</td>
-                  <td className="p-3 font-mono tabular-nums text-accent font-bold">{p.price || "—"}</td>
-                  <td className="p-3">
-                    <span className={`inline-flex px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${
-                      p.tier === "large" ? "bg-indigo-950 text-indigo-300" : "bg-emerald-950 text-emerald-300"
-                    }`}>
-                      {p.tier}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {prices.length === 0 && (
-                <tr>
-                  <td colSpan={3} className="p-4 text-center text-text-muted">No competitor pricing mapped.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </MagicBentoCard>
+      {competitorPriceIndex}
 
       <MagicBentoCard className="p-4 space-y-1.5">
         <h4 className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Pricing Strategy Notes</h4>

@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CheckCircle, Loader2, AlertCircle, HelpCircle, XCircle } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
 import { useBackgroundStageStore } from "@/stores/backgroundStageStore";
 
 interface PhaseState {
@@ -427,12 +426,9 @@ export function ProgressPanel({ analysisId, productName, onComplete, onError, on
     `${Math.floor(s / 60)}m ${s % 60}s`;
 
   const completedCount = phases.filter((p) => p.status === "complete").length;
-  // "Running" for shimmer/pulse purposes — actively processing, not paused
-  // waiting on the user and not yet finished.
-  const isRunning = !failedMessage && !pendingQuestion && completedCount < PHASE_LABELS.length;
 
   return (
-    <motion.div layout className="analysis-progress-panel bg-surface-2 border border-border rounded-xl overflow-hidden mb-6 shadow-xl text-xs">
+    <div className="analysis-progress-panel bg-surface-2 border border-border rounded-xl overflow-hidden mb-6 shadow-xl text-xs">
       {/* Top bar */}
       <div className="progress-topbar flex items-center justify-between px-5 py-3 border-b border-border bg-surface-3/30">
         <div className="progress-meta text-[11px] text-text-muted font-mono">
@@ -450,7 +446,6 @@ export function ProgressPanel({ analysisId, productName, onComplete, onError, on
             </div>
           ) : (
             <div className="status-running flex items-center gap-1.5 text-[11px] text-accent font-semibold">
-              {isRunning && <span className="pulse-dot w-1.5 h-1.5 rounded-full bg-accent" />}
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
               <span>Analyzing…</span>
             </div>
@@ -469,30 +464,18 @@ export function ProgressPanel({ analysisId, productName, onComplete, onError, on
         </div>
       </div>
 
-      {/* Overall progress bar — derived from completed phase count.
-          A shimmer sweeps across the filled portion only while actively
-          running (never while paused for input or after completion). */}
+      {/* Overall progress bar — derived from completed phase count. */}
       <div className="h-1 bg-surface-3">
         <div
-          className="relative h-full bg-accent overflow-hidden transition-[width] duration-[250ms] ease-[var(--ease-out)]"
+          className="h-full bg-accent transition-[width] duration-[250ms] ease-[var(--ease-out)]"
           style={{ width: `${(completedCount / PHASE_LABELS.length) * 100}%` }}
-        >
-          {isRunning && <div className="shimmer-sweep" />}
-        </div>
+        />
       </div>
 
       {/* Product Identity Card — shown as soon as Stage 1 completes, so a
           wrong identification is visible immediately. */}
-      <AnimatePresence initial={false}>
-        {identity && (identity.category || identity.whatItIs) && (
-          <motion.div
-            key="identity-card"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="mx-5 mt-4 overflow-hidden"
-          >
+      {identity && (identity.category || identity.whatItIs) && (
+        <div className="mx-5 mt-4">
             <div className="p-3 bg-surface-3/30 border border-border rounded-lg">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Identified Product</span>
@@ -520,25 +503,16 @@ export function ProgressPanel({ analysisId, productName, onComplete, onError, on
                 </div>
               )}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
 
       {/* Legacy brand registry — live per-brand search status while Phase 1
           runs its curated-brand discovery pass (lib/legacy-brand-discovery.ts),
           polled via startBrandProgressPolling() above. Disappears once
           Phase 1 completes (setBrandProgress(null)) — the completed
           competitor list takes over from there. */}
-      <AnimatePresence initial={false}>
-        {brandProgress && Array.isArray(brandProgress.brands) && brandProgress.brands.length > 0 && (
-          <motion.div
-            key="brand-progress"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="mx-5 mt-4 overflow-hidden"
-          >
+      {brandProgress && Array.isArray(brandProgress.brands) && brandProgress.brands.length > 0 && (
+        <div className="mx-5 mt-4">
             <div className="p-3 bg-surface-3/30 border border-border rounded-lg">
               <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
                 Legacy brands being searched{brandProgress.category_name ? ` — ${brandProgress.category_name}` : ""}
@@ -583,22 +557,13 @@ export function ProgressPanel({ analysisId, productName, onComplete, onError, on
                 ))}
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
 
       {/* Pause-and-ask: identification couldn't confidently determine the
           category — never guess, ask the one question needed instead. */}
-      <AnimatePresence initial={false}>
-        {pendingQuestion && (
-          <motion.div
-            key="pending-question"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="mx-5 mt-4 overflow-hidden"
-          >
+      {pendingQuestion && (
+        <div className="mx-5 mt-4">
             <div className="p-3.5 bg-warning/5 border border-warning/25 rounded-lg space-y-2">
               <div className="flex items-center gap-1.5 text-warning font-bold text-[11px]">
                 <HelpCircle className="w-3.5 h-3.5" />
@@ -626,9 +591,8 @@ export function ProgressPanel({ analysisId, productName, onComplete, onError, on
                 </button>
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
 
       {/* Phase list */}
       <div className="phase-list flex flex-col p-5 gap-4">
@@ -712,6 +676,6 @@ export function ProgressPanel({ analysisId, productName, onComplete, onError, on
           </div>
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }

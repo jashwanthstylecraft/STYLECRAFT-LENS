@@ -533,6 +533,44 @@ export async function getUserAnalyses(userId: string) {
   }
 }
 
+// The most recent analysis linked to a project, regardless of status — lets
+// the project page (app/(app)/dashboard/projects/[id]/page.tsx) detect an
+// analysis that's still pending/running (e.g. after a page reload or a
+// revisit) and resume showing its progress banner, without the client
+// needing to have carried the analysisId itself via the URL. Returns null
+// when the project has no analyses at all.
+export async function getLatestAnalysisForProject(projectId: string, orgId: string) {
+  if (isSupabaseConfigured) {
+    const { data, error } = await supabaseAdmin
+      .from("analyses")
+      .select("id, status, phase")
+      .eq("project_id", projectId)
+      .eq("org_id", orgId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  } else {
+    try {
+      const analysis = await prisma.analysis.findFirst({
+        where: { projectId, orgId },
+        orderBy: { createdAt: "desc" },
+      });
+      if (!analysis) return null;
+      return { id: analysis.id, status: analysis.status.toLowerCase(), phase: analysis.phase };
+    } catch (e) {
+      console.warn("Prisma failed in getLatestAnalysisForProject. Falling back to memoryDb.");
+      const list = memoryDb.analyses
+        .filter(a => a.projectId === projectId && a.orgId === orgId)
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      if (!list.length) return null;
+      return { id: list[0].id, status: list[0].status.toLowerCase(), phase: list[0].phase };
+    }
+  }
+}
+
 // For the anti-boilerplate check: recent completed analyses' identified
 // category + positioning text, so a newly-generated Phase 3 synthesis can
 // be compared against what the last few DIFFERENT-category analyses

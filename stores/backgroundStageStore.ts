@@ -2,8 +2,7 @@
 
 import { createContext, createElement, useContext, type ReactNode } from "react";
 import { create } from "zustand";
-import { usePathname } from "next/navigation";
-import { resolveRouteBackground, type BackgroundAssetKey } from "@/lib/background-stage-config";
+import type { BackgroundAssetKey } from "@/lib/background-stage-config";
 
 interface BackgroundStageState {
   // Set by a route while it's in a temporary "waiting/generating" state
@@ -43,16 +42,12 @@ export function GlassModeOverride({ value, children }: { value: boolean; childre
   return createElement(GlassModeOverrideContext.Provider, { value }, children);
 }
 
-// Every existing MagicBentoCard/MagicBentoSection usage calls this to decide
-// solid vs. glass rendering. Computed directly from the current route (not
-// synchronized state written by BackgroundStage) so there's no one-tick lag
-// or flash between a route changing and its cards knowing whether a
-// background is behind them — admin routes (excluded from
-// resolveRouteBackground) correctly stay solid. A GlassModeOverride
-// ancestor (see above) takes priority over the route default when present.
+// Background videos/images (BackgroundStage) were removed app-wide for
+// performance and text-visibility reasons — routes no longer have a "cinema
+// image" behind them, so this always resolves to plain/solid rendering now.
+// An explicit GlassModeOverride still wins if some future caller passes one.
 export function useGlassMode(): boolean {
   const override = useContext(GlassModeOverrideContext);
-  const pathname = usePathname();
   if (override !== null) return override;
-  return resolveRouteBackground(pathname) !== null;
+  return false;
 }

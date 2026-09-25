@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth";
 import { getProject, updateProject, deleteProject } from "@/lib/db/projects";
+import { getLatestAnalysisForProject } from "@/lib/db/analyses";
+
+const TERMINAL_ANALYSIS_STATUSES = ["complete", "failed", "cancelled"];
 
 export async function GET(
   request: Request,
@@ -18,7 +21,22 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ project });
+    // Resumability fallback for the analysis progress banner (see
+    // app/(app)/dashboard/projects/[id]/page.tsx) — the happy path carries
+    // the just-created analysisId via the redirect URL instead, but a page
+    // reload or a later revisit has no query param, so fall back to the
+    // project's most recent still-in-flight analysis, if any.
+    let activeAnalysisId: string | null = null;
+    try {
+      const latest = await getLatestAnalysisForProject(id, session.orgId);
+      if (latest && !TERMINAL_ANALYSIS_STATUSES.includes(latest.status)) {
+        activeAnalysisId = latest.id;
+      }
+    } catch {
+      // Best-effort — never blocks loading the project itself over this.
+    }
+
+    return NextResponse.json({ project: { ...project, activeAnalysisId } });
   } catch (error: any) {
     return NextResponse.json(
       { error: "SERVER_ERROR", message: error.message },

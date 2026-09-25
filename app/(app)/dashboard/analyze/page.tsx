@@ -900,11 +900,46 @@ export default function AnalyzePage() {
         ? (heatTechBrandedName.trim() ? `${heatTechFamilyLabel} (${heatTechBrandedName.trim()})` : heatTechFamilyLabel)
         : heatTechBrandedName.trim();
 
+      // Fresh analysis with no existing project to attach to — auto-create
+      // the project up front instead of leaving that as a separate manual
+      // step afterward. This also atomically starts that project's own
+      // snapshot -> TDS -> GTM pipeline (app/api/projects/route.ts), so it's
+      // already generating in the background by the time we redirect there.
+      // Field mapping mirrors app/(app)/dashboard/projects/new/page.tsx's own
+      // submit body (the two forms share most fields 1:1 — see
+      // AnalysisFormSchema/NewProjectSchema in lib/validations.ts).
+      let newProjectId: string | null = null;
+      if (!projectIdParam) {
+        const projectRes = await fetch("/api/projects", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: productName.trim(),
+            industry,
+            targetMarket,
+            productName: productName.trim(),
+            description: description.trim(),
+            category: category.trim() || undefined,
+            toolType,
+            companyContext: companyContext.trim() || undefined,
+            motorFamily: primaryCriterion === "motor" ? (motorFamily || undefined) : undefined,
+            motorBrandedName: primaryCriterion === "motor" ? (motorBrandedName.trim() || undefined) : undefined,
+            motorTech: primaryCriterion === "motor" ? (motorTechFallback || undefined) : undefined,
+            keyDiff: keyDiff.trim() || undefined,
+            pricePoint: pricePoint.trim() || undefined,
+            predecessorRef: predecessorRef.trim() || undefined,
+          }),
+        });
+        const projectData = await projectRes.json();
+        if (!projectRes.ok) throw new Error(projectData.message || "Failed to create project");
+        newProjectId = projectData.project.id;
+      }
+
       const res = await fetch("/api/analyses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          projectId: projectIdParam || undefined,
+          projectId: newProjectId || projectIdParam || undefined,
           industry,
           targetMarket,
           productName: productName.trim(),
@@ -936,6 +971,17 @@ export default function AnalyzePage() {
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to start analysis");
+
+      // Fresh-project case: land directly in the new project instead of
+      // showing the inline progress screen here — the project page mounts
+      // the same ProgressPanel as a background banner (see
+      // app/(app)/dashboard/projects/[id]/page.tsx), so the rest of the
+      // project (Sources upload, GTM/TDS generation already running) is
+      // usable immediately instead of the user waiting on a blank screen.
+      if (newProjectId) {
+        router.push(`/dashboard/projects/${newProjectId}?analysisId=${data.analysisId}`);
+        return;
+      }
 
       // "Save changes back to catalog" — admin-gated (client-side here, the
       // PATCH route enforces it for real). Best-effort, never blocks the

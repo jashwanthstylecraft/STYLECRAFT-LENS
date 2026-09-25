@@ -24,7 +24,6 @@ import {
   Bar,
   Cell
 } from "recharts";
-import { AnimatePresence, motion } from "framer-motion";
 import KPICard from "@/components/dashboard/KPICard";
 import { toast } from "sonner";
 import { Badge, type BadgeTone } from "@/components/ui/Badge";
@@ -415,30 +414,23 @@ export default function DashboardOverview() {
           <div className="stagger-entrance bg-surface-2 border border-border rounded-xl p-5 flex flex-col flex-1" style={{ animationDelay: "200ms" }}>
             <h2 className="text-sm font-bold text-text-primary mb-4">Activity Feed</h2>
             <div className="space-y-1 flex-1 overflow-y-auto max-h-[300px] pr-1">
-              <AnimatePresence initial={false}>
-                {activityFeed.map((act) => {
-                  const Icon = act.icon;
-                  return (
-                    <motion.div
-                      key={act.id}
-                      layout
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                      className="highlight-fade flex gap-3 text-xs leading-normal -mx-2 px-2 py-1.5 rounded-lg"
-                    >
-                      <div className={`p-2 rounded-lg shrink-0 w-8 h-8 flex items-center justify-center ${act.color}`}>
-                        <Icon className="w-4 h-4" />
-                      </div>
-                      <div className="space-y-0.5 min-w-0">
-                        <p className="text-text-primary font-medium">{act.text}</p>
-                        <p className="text-[10px] text-text-muted">{act.time}</p>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
+              {activityFeed.map((act) => {
+                const Icon = act.icon;
+                return (
+                  <div
+                    key={act.id}
+                    className="flex gap-3 text-xs leading-normal -mx-2 px-2 py-1.5 rounded-lg"
+                  >
+                    <div className={`p-2 rounded-lg shrink-0 w-8 h-8 flex items-center justify-center ${act.color}`}>
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <div className="space-y-0.5 min-w-0">
+                      <p className="text-text-primary font-medium">{act.text}</p>
+                      <p className="text-[10px] text-text-muted">{act.time}</p>
+                    </div>
+                  </div>
+                );
+              })}
               {activityFeed.length === 0 && (
                 <EmptyState compact icon={Activity} title="No recent activity" />
               )}

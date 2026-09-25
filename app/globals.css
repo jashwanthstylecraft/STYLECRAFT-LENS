@@ -267,28 +267,12 @@ h3 {
   text-decoration: underline;
 }
 
-/* Glassmorphism styling helpers — deliberately dark regardless of theme
-   (same "cinematic surface stays dark" precedent as --cinema-gold/.cinema-
-   glass below), so the text/border tokens must be re-pinned to their
-   dark-mode values here too. Confirmed real bug: in light mode,
-   --text-primary/secondary/muted and --border/--border-strong flip to
-   colors meant for a near-white background — dark text on this
-   permanently-dark glass, illegible. Re-declaring these custom properties
-   on the selector itself means every descendant using text-text-primary/
-   border-border/etc. picks up the dark-appropriate value via the normal
-   CSS cascade, with zero changes needed in the many component files that
-   render inside a glass surface. */
+/* .glass-panel — same removed-background story as .cinema-glass/.cinema-text
+   above (no longer used anywhere; kept as a no-op in case anything still
+   references the class name). */
 .glass-panel {
-  background: rgba(22, 22, 26, 0.7);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border);
-  --text-primary:    #F4F4F5;
-  --text-secondary:  #A1A1AA;
-  --text-muted:      #8B8B96;
-  --border:          rgba(255, 255, 255, 0.08);
-  --border-strong:   rgba(255, 255, 255, 0.14);
-  --accent-text:     #A5B4FC;
-  color: var(--text-primary);
+  background: none;
+  backdrop-filter: none;
 }
 
 /* ============================================================
@@ -685,108 +669,23 @@ h3 {
   pointer-events: none;
 }
 
-/* Content sitting on top of hero imagery — blur(12px) + subtle border per
-   spec's "legibility system." Used across MANY dashboard components
-   (useGlassMode() is true on essentially every non-admin route, not just
-   the auth pages), all rendering their labels/values via the normal
-   text-text-primary/text-text-muted/border-border Tailwind classes. Since
-   this card is deliberately dark regardless of the app's light/dark theme
-   toggle (see BackgroundStage's own header comment — a cinematic backdrop
-   stays dark on purpose), those tokens must be re-pinned to their dark-
-   mode values here too — otherwise every one of those components goes
-   dark-text-on-dark-glass the moment a user is in light mode. Same fix
-   as .glass-panel above; re-declared here too since standard CSS custom
-   properties aren't inherited automatically between unrelated classes. */
-.cinema-glass {
-  background: rgba(22, 22, 26, 0.55); /* --surface-2 at partial alpha */
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  --text-primary:    #F4F4F5;
-  --text-secondary:  #A1A1AA;
-  --text-muted:      #8B8B96;
-  --border:          rgba(255, 255, 255, 0.08);
-  --border-strong:   rgba(255, 255, 255, 0.14);
-  --accent-text:     #A5B4FC;
-  color: var(--text-primary);
-}
-
-/* Real bug, confirmed live in the GTM tab: .cinema-glass's re-pin above is
-   correct for text sitting BARE on the glass's own translucent dark
-   background, but it cascades to EVERY descendant, including ones that
-   nest a genuinely opaque, theme-flipping surface of their own (an
-   editable field's bg-surface-1 input, a status chip's bg-surface-3
-   pill — both real, solid backgrounds that already correctly flip
-   light/dark on their own). Those need their TEXT to flip with them too,
-   not stay pinned to cinema-glass's dark-mode value — in light mode that
-   produced near-white text pinned on top of a bg-surface-1 input/
-   bg-surface-3 chip that had itself correctly flipped to a light
-   background, i.e. invisible again, just the opposite polarity of the
-   original bug. Uses `~=` (exact whitespace-separated class-token match),
-   NOT `*=` (substring) — a first attempt at this used `*=` and it also
-   matched Tailwind's TRANSLUCENT opacity-modifier variants (bg-surface-3/15,
-   /20, /30, /40, /50 — used all over this same GTM tab to tint a value's
-   wrapper card, e.g. the generated-text <p> in the marketing-direction/FAQ
-   sections). Those are NOT actually opaque: at 15-50% alpha the permanently-
-   dark cinema backdrop still shows through, so in light mode they still read
-   as a dark-ish surface, and flipping their text to the light-mode dark
-   color made that text disappear again — the same bug in the other
-   direction. `~=` only matches a literal, exact "bg-surface-3" token (the
-   fully-opaque, no-suffix utility), leaving every `bg-surface-3/NN`
-   translucent tint correctly inheriting .cinema-glass's own pinned (light-
-   on-dark) text tokens instead. */
-.cinema-glass [class~="bg-surface-1"],
-.cinema-glass [class~="bg-surface-2"],
-.cinema-glass [class~="bg-surface-3"],
-.glass-panel [class~="bg-surface-1"],
-.glass-panel [class~="bg-surface-2"],
-.glass-panel [class~="bg-surface-3"],
-.magic-bento-card--glass [class~="bg-surface-1"],
-.magic-bento-card--glass [class~="bg-surface-2"],
-.magic-bento-card--glass [class~="bg-surface-3"] {
-  --text-primary:    #F4F4F5;
-  --text-secondary:  #A1A1AA;
-  --text-muted:      #8B8B96;
-  --border:          rgba(255, 255, 255, 0.08);
-  --border-strong:   rgba(255, 255, 255, 0.14);
-  --accent-text:     #A5B4FC;
-}
-:root[data-theme="light"] .cinema-glass [class~="bg-surface-1"],
-:root[data-theme="light"] .cinema-glass [class~="bg-surface-2"],
-:root[data-theme="light"] .cinema-glass [class~="bg-surface-3"],
-:root[data-theme="light"] .glass-panel [class~="bg-surface-1"],
-:root[data-theme="light"] .glass-panel [class~="bg-surface-2"],
-:root[data-theme="light"] .glass-panel [class~="bg-surface-3"],
-:root[data-theme="light"] .magic-bento-card--glass [class~="bg-surface-1"],
-:root[data-theme="light"] .magic-bento-card--glass [class~="bg-surface-2"],
-:root[data-theme="light"] .magic-bento-card--glass [class~="bg-surface-3"] {
-  --text-primary:    #18181B;
-  --text-secondary:  #4B5563;
-  --text-muted:      #71717A;
-  --border:          rgba(0, 0, 0, 0.08);
-  --border-strong:   rgba(0, 0, 0, 0.14);
-  --accent-text:     #4F46E5;
-}
-
-/* Same dark-mode token re-pin as .cinema-glass above, but with no
-   background/blur/border of its own — for page-header text (an h1 title +
-   its subtitle) that sits DIRECTLY on the raw BackgroundStage image+scrim,
-   never inside a card at all. Every dashboard page with a route background
-   (see lib/background-stage-config.ts — analyze/projects/reports/
-   competitors/help/settings/Overview/project-detail all have one) renders
-   its own title this way; without this class that heading uses the normal
-   theme-flipping text-text-primary/text-text-secondary classes, which in
-   light mode resolve to dark text directly on the same permanently-dark
-   image+scrim — invisible, the exact bug this class exists to fix. Applied
-   directly to the header wrapper only (never a whole page), since a plain
-   solid-background card nested inside must keep flipping normally with the
-   theme. */
+/* .cinema-glass / .cinema-text / .glass-panel / .magic-bento-card--glass
+   used to re-pin text/border tokens to fixed dark-mode values, because they
+   sat over a permanently-dark cinematic background image/video that no
+   longer exists (BackgroundStage was removed app-wide for performance and
+   text-visibility reasons — see components/scroll/BackgroundStage.tsx and
+   stores/backgroundStageStore.ts's useGlassMode, which now always resolves
+   to plain/solid). These classes are now no-ops: every element carrying one
+   just inherits the normal theme-flipping text-primary/text-secondary/
+   border tokens from its actual (already solid) surface, same as any other
+   element. Left as empty/near-empty rules rather than hunting down every
+   className usage across ~15 pages — harmless if the class name is still
+   present in markup. */
+.cinema-glass,
 .cinema-text {
-  --text-primary:    #F4F4F5;
-  --text-secondary:  #A1A1AA;
-  --text-muted:      #8B8B96;
-  --accent-text:     #A5B4FC;
-  color: var(--text-primary);
+  background: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 /* Thin fixed top progress bar, gold accent — mounted once per surface via
