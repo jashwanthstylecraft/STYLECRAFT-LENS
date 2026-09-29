@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "next-themes";
-import TargetCursor from "@/components/ui/TargetCursor";
 import { ThemedToaster } from "@/components/theme/ThemedToaster";
 import { fontVariables } from "@/lib/fonts";
 import "./globals.css";
@@ -21,7 +20,6 @@ export default function RootLayout({
 
   const content = (
     <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem>
-      <TargetCursor cursorColor="#ffffff" cursorColorOnTarget="#6366F1" />
       {children}
       <ThemedToaster />
     </ThemeProvider>

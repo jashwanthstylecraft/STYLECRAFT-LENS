@@ -301,15 +301,17 @@ export default function ProjectDetailPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 self-start md:self-auto">
-            <button
-              onClick={() => router.push(`/dashboard/analyze?projectId=${id}`)}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-accent hover:bg-accent-hover text-white text-xs font-bold rounded-lg transition-colors shadow shadow-accent/25"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Run analysis</span>
-            </button>
-          </div>
+          {!activeAnalysisId && (
+            <div className="flex items-center gap-2 self-start md:self-auto">
+              <button
+                onClick={() => router.push(`/dashboard/analyze?projectId=${id}`)}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-accent hover:bg-accent-hover text-white text-xs font-bold rounded-lg transition-colors shadow shadow-accent/25"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Run analysis</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -493,9 +495,22 @@ export default function ProjectDetailPage() {
                   projectId={id}
                   toolTypes={toolTypes}
                 />
+              ) : activeAnalysisId ? (
+                /* An analysis is actively running for this project (banner
+                   below) — its report links itself automatically the
+                   moment it completes (lib/analysisEngine.ts), so the old
+                   "Run analysis / Link report" CTA here would be both
+                   redundant and confusing to show at the same time. */
+                <div className="flex flex-col items-center justify-center p-8 text-center space-y-2">
+                  <Loader2 className="w-6 h-6 text-accent animate-spin" />
+                  <p className="text-[11px] text-text-muted max-w-sm">Competitive analysis is running — this tab fills in automatically once it completes.</p>
+                </div>
               ) : (
                 /* Empty state — scoped to just this canvas, not the whole
-                   page, so the tab bar and Project Deck stay reachable. */
+                   page, so the tab bar and Project Deck stay reachable.
+                   Only reachable once no analysis is in flight (see above) —
+                   still needed for projects created without ever running
+                   one (app/(app)/dashboard/projects/new/page.tsx). */
                 <div className="flex flex-col items-center justify-center p-8 text-center space-y-3">
                   <div className="w-10 h-10 rounded-full bg-surface-3 border border-border flex items-center justify-center text-base">📊</div>
                   <div className="space-y-1">
