@@ -156,11 +156,19 @@ function stripSourceTag(rowAnswer: string): string {
 export function deriveFeaturesFullListDeterministic(
   projectDescription: string | null | undefined,
   tds: Record<string, string> | null,
-  catalogDescription: string | null | undefined = null
+  catalogDescription: string | null | undefined = null,
+  // The analyze/new-project form's own "Key Differentiating Feature" field
+  // — real, human-entered, single-point content that's independent of how
+  // well-punctuated the Description is. Almost every project has this set,
+  // so it's a reliable extra bullet that doesn't depend on splitting logic
+  // or an AI/competitor call succeeding.
+  projectKeyDiff: string | null | undefined = null
 ): FeatureBullet[] {
   const projectBullets = buildInputBullets(projectDescription);
-  const catalogBullets = buildInputBullets(catalogDescription).filter(b => !dedupeAgainst(projectBullets, b));
-  const inputBullets = [...projectBullets, ...catalogBullets];
+  const keyDiffBullet = (projectKeyDiff || "").trim();
+  const keyDiffBullets = keyDiffBullet && !dedupeAgainst(projectBullets, keyDiffBullet) ? [keyDiffBullet] : [];
+  const catalogBullets = buildInputBullets(catalogDescription).filter(b => !dedupeAgainst([...projectBullets, ...keyDiffBullets], b));
+  const inputBullets = [...projectBullets, ...keyDiffBullets, ...catalogBullets];
   const listingBulletsRaw = buildOurListingBullets(tds);
   const listingBullets = listingBulletsRaw.filter(b => !dedupeAgainst(inputBullets, b));
 
@@ -230,7 +238,7 @@ ${competitorFeatureText}`;
 // top-up when still short), capped at the group's row count — the caller
 // (applyFeaturesAndExpertTip) writes one bullet per row.
 export async function deriveFeaturesFullList(sources: GtmSources, voiceBlock: string = "", tdsGroundingBlock: string = "", catalogDescription: string | null = null): Promise<FeatureBullet[]> {
-  const floor = deriveFeaturesFullListDeterministic(sources.project.description, sources.tds, catalogDescription);
+  const floor = deriveFeaturesFullListDeterministic(sources.project.description, sources.tds, catalogDescription, sources.project.keyDiff);
   const ca = sources.activeReport?.competitive_analysis || {};
   const competitors: CompetitorSpecSource[] = [...(ca.large_brand_competitors || []), ...(ca.indie_emerging_competitors || [])];
   const ourSpecs = extractOurSpecsFromTds(sources.tds);
