@@ -315,13 +315,16 @@ export default function ProjectDetailPage() {
         </div>
       </div>
 
-      {/* Main layout */}
-      <div className={`grid grid-cols-1 gap-6 items-start ${tabFullScreen ? "" : "lg:grid-cols-12"}`}>
+      {/* Main layout — full-width stacked sections (was a 4/12 + 8/12 grid;
+          the narrow 4/12 sidebar cramped the Description text and confined
+          the tab workspace to the other 8/12, both fixed by just stacking
+          full-width sections instead). */}
+      <div className="space-y-6">
 
-        {/* Left Side: Product Specifications (4/12) — hidden in full-screen
-            tab view so the tab workspace can use the freed-up width. */}
+        {/* Product Specifications — full width; hidden in full-screen tab
+            view so the tab workspace has the whole page to itself. */}
         {!tabFullScreen && (
-        <div className="lg:col-span-4 bg-surface-2 border border-border rounded-xl p-5 space-y-4">
+        <div className="bg-surface-2 border border-border rounded-xl p-5 space-y-4">
           <h2 className="text-xs font-bold text-text-muted uppercase tracking-wider">Product specs & context</h2>
           
           <div className="space-y-4 text-xs">
@@ -330,24 +333,28 @@ export default function ProjectDetailPage() {
               <p className="text-text-primary leading-relaxed">{project.description}</p>
             </div>
 
-            {project.category && (
-              <div className="space-y-1">
-                <span className="text-[10px] text-text-muted uppercase font-bold block">Market / Amazon Category</span>
-                <p className="text-text-primary font-semibold">{project.category}</p>
-              </div>
-            )}
+            {(project.category || project.pricePoint || project.targetMarket) && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-3 border-t border-border/60">
+                {project.category && (
+                  <div className="space-y-1">
+                    <span className="text-[10px] text-text-muted uppercase font-bold block">Market / Amazon Category</span>
+                    <p className="text-text-primary font-semibold">{project.category}</p>
+                  </div>
+                )}
 
-            {project.pricePoint && (
-              <div className="space-y-1">
-                <span className="text-[10px] text-text-muted uppercase font-bold block">Target Price Point</span>
-                <p className="text-text-primary font-semibold">{project.pricePoint}</p>
-              </div>
-            )}
+                {project.pricePoint && (
+                  <div className="space-y-1">
+                    <span className="text-[10px] text-text-muted uppercase font-bold block">Target Price Point</span>
+                    <p className="text-text-primary font-semibold">{project.pricePoint}</p>
+                  </div>
+                )}
 
-            {project.targetMarket && (
-              <div className="space-y-1">
-                <span className="text-[10px] text-text-muted uppercase font-bold block">Target Market Tier</span>
-                <p className="text-text-primary font-semibold uppercase">{project.targetMarket}</p>
+                {project.targetMarket && (
+                  <div className="space-y-1">
+                    <span className="text-[10px] text-text-muted uppercase font-bold block">Target Market Tier</span>
+                    <p className="text-text-primary font-semibold uppercase">{project.targetMarket}</p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -355,16 +362,20 @@ export default function ProjectDetailPage() {
               <div className="pt-3 border-t border-border/60 space-y-3">
                 <span className="text-[10px] text-text-muted uppercase font-bold block font-mono">Hardware & Positioning specs</span>
 
-                {project.motorTech && (
-                  <div className="flex justify-between py-1 border-b border-border/40">
-                    <span className="text-text-secondary">Motor type</span>
-                    <span className="text-text-primary font-semibold">{project.motorTech}</span>
-                  </div>
-                )}
-                {project.keyDiff && (
-                  <div className="flex justify-between py-1 border-b border-border/40">
-                    <span className="text-text-secondary">Differentiator</span>
-                    <span className="text-text-primary font-semibold">{project.keyDiff}</span>
+                {(project.motorTech || project.keyDiff) && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {project.motorTech && (
+                      <div className="flex justify-between py-1 border-b border-border/40">
+                        <span className="text-text-secondary">Motor type</span>
+                        <span className="text-text-primary font-semibold">{project.motorTech}</span>
+                      </div>
+                    )}
+                    {project.keyDiff && (
+                      <div className="flex justify-between py-1 border-b border-border/40">
+                        <span className="text-text-secondary">Differentiator</span>
+                        <span className="text-text-primary font-semibold">{project.keyDiff}</span>
+                      </div>
+                    )}
                   </div>
                 )}
                 {project.companyContext && (
@@ -379,15 +390,8 @@ export default function ProjectDetailPage() {
         </div>
         )}
 
-        {/* Right Side: Linked Reports Workspace (8/12, or the full width in
-            full-screen tab view) */}
-        <div className={tabFullScreen ? "space-y-6" : "lg:col-span-8 space-y-6"}>
-          {/* Project Outputs & Document Generators Bar — renders regardless
-              of whether a report is linked; Sales Kit still needs one for
-              its "Active Report" cross-references, but TDS/GTM download
-              and Save-to-Drive buttons work off the project alone. */}
-          <ProjectOutputsBar project={project} report={selectedReport} tdsEnabled={tdsEnabled} />
-
+        {/* Tab workspace — full width */}
+        <div className="space-y-6">
           {/* Report selector and download bar — only meaningful once a
               report is linked; the tab bar itself (below) is NOT gated on
               this, since Project Deck doesn't depend on a report at all —
