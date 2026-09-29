@@ -32,7 +32,8 @@ import {
   Star,
   Minus,
   Maximize2,
-  Minimize2
+  Minimize2,
+  MessageSquare
 } from "lucide-react";
 import { toast } from "sonner";
 import { downloadTabPDF, downloadReportPDF } from "@/lib/export-pdf";
@@ -1689,7 +1690,64 @@ function TdsKnowledgeSection({ projectId, pipelineStatus }: { projectId: string;
 // ────────────────────────────────────────────────────────────────────────────
 const SOURCE_LABELS = GTM_SOURCE_LABELS;
 
-const OWNER_OPTIONS = ["Product Marketing", "Marketing", "Sales", "Legal", "Ops"];
+// Compact per-field Notes affordance — a small icon that opens a popover
+// instead of a permanently-visible input, so a field row isn't spending
+// width on two metadata boxes (the old Owner dropdown + Notes input) when
+// the field's owner is already implied by which section/tab it lives under
+// (FIELD_OWNER_MAP in lib/gtm-field-schema.ts). Shared by both the regular
+// field rows and the repeatable-group rows below.
+function FieldNotesButton({ value, onChange, required, requiredPlaceholder }: {
+  value: string;
+  onChange: (v: string) => void;
+  required?: boolean;
+  requiredPlaceholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [open]);
+
+  const hasNotes = !!value?.trim();
+  const missingRequired = !!required && !hasNotes;
+
+  return (
+    <div ref={containerRef} className="relative shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        title={missingRequired ? "Notes required" : hasNotes ? "View/edit notes" : "Add notes"}
+        className={`p-1 rounded-md border transition-colors ${
+          missingRequired ? "border-warning/50 bg-warning/10 text-warning" :
+          hasNotes ? "border-accent/40 bg-accent/10 text-accent" :
+          "border-border text-text-muted hover:text-text-primary hover:border-border-strong"
+        }`}
+      >
+        <MessageSquare className="w-3 h-3" />
+      </button>
+      {open && (
+        <div className="absolute z-20 right-0 mt-1 w-56 p-2 bg-surface-2 border border-border rounded-lg shadow-xl">
+          <textarea
+            autoFocus
+            rows={3}
+            value={value || ""}
+            onChange={e => onChange(e.target.value)}
+            placeholder={missingRequired ? requiredPlaceholder : "Notes…"}
+            className={`w-full px-2 py-1.5 border rounded-md bg-surface-1 text-text-primary placeholder-text-muted text-[10px] outline-none focus:border-accent resize-y ${
+              missingRequired ? "border-warning/50" : "border-border"
+            }`}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
 
 // GTM Schema v3's repeatable-row groups (lib/gtm-field-schema.ts's
 // groupFields) — the overall label shown once above row #1, distinct from
@@ -2101,11 +2159,6 @@ function ProductKnowledgeSection({
     }
   }
 
-  function handleOwnerChange(fieldId: string, owner: string) {
-    setFields(prev => ({ ...prev, [fieldId]: { ...prev[fieldId], owner } }));
-    saveMeta(fieldId, { owner });
-  }
-
   function handleNotesChange(fieldId: string, notes: string) {
     setFields(prev => ({ ...prev, [fieldId]: { ...prev[fieldId], notes } }));
     if (debounceTimers.current[`notes:${fieldId}`]) clearTimeout(debounceTimers.current[`notes:${fieldId}`]);
@@ -2411,23 +2464,12 @@ function ProductKnowledgeSection({
                           className="w-full px-2.5 py-1 border border-border rounded-lg bg-surface-1 text-text-secondary placeholder-text-muted outline-none focus:border-accent text-[10px]"
                         />
                       )}
-                      <div className="flex items-center gap-2">
-                        <select
-                          value={entry?.owner || f.owner || "Product Marketing"}
-                          onChange={e => handleOwnerChange(f.id, e.target.value)}
-                          title="Owner"
-                          className="px-1.5 py-1 border border-border rounded-md bg-surface-1 text-text-secondary text-[9px] outline-none focus:border-accent"
-                        >
-                          {OWNER_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                        </select>
-                        <input
-                          type="text"
+                      <div className="flex items-center justify-end">
+                        <FieldNotesButton
                           value={entry?.notes || ""}
-                          onChange={e => handleNotesChange(f.id, e.target.value)}
-                          placeholder={bothNeedsNotes ? "Required: why Both, and how to balance the two audiences" : "Notes…"}
-                          className={`flex-1 px-1.5 py-1 border rounded-md bg-surface-1 text-text-secondary placeholder-text-muted text-[9px] outline-none focus:border-accent ${
-                            bothNeedsNotes ? "border-warning/50" : "border-border"
-                          }`}
+                          onChange={v => handleNotesChange(f.id, v)}
+                          required={bothNeedsNotes}
+                          requiredPlaceholder="Required: why Both, and how to balance the two audiences"
                         />
                       </div>
                       <div className="h-3 text-[9px] text-text-muted">
@@ -2630,11 +2672,6 @@ function ContentFormSection({
     }
   }
 
-  function handleOwnerChange(fieldId: string, owner: string) {
-    setFields(prev => ({ ...prev, [fieldId]: { ...prev[fieldId], owner } }));
-    saveMeta(fieldId, { owner });
-  }
-
   function handleNotesChange(fieldId: string, notes: string) {
     setFields(prev => ({ ...prev, [fieldId]: { ...prev[fieldId], notes } }));
     if (debounceTimers.current[`notes:${fieldId}`]) clearTimeout(debounceTimers.current[`notes:${fieldId}`]);
@@ -2724,22 +2761,8 @@ function ContentFormSection({
               className={`font-body-doc w-full px-2.5 py-1.5 border rounded-lg bg-surface-1 text-text-primary outline-none focus:border-accent resize-y text-[11px] ${flagged ? "border-danger/40" : "border-border"}`}
             />
           )}
-          <div className="flex items-center gap-2">
-            <select
-              value={entry?.owner || f.owner || "Product Marketing"}
-              onChange={e => handleOwnerChange(f.id, e.target.value)}
-              title="Owner"
-              className="px-1.5 py-1 border border-border rounded-md bg-surface-1 text-text-secondary text-[9px] outline-none focus:border-accent"
-            >
-              {OWNER_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-            </select>
-            <input
-              type="text"
-              value={entry?.notes || ""}
-              onChange={e => handleNotesChange(f.id, e.target.value)}
-              placeholder="Notes…"
-              className="flex-1 px-1.5 py-1 border border-border rounded-md bg-surface-1 text-text-secondary placeholder-text-muted text-[9px] outline-none focus:border-accent"
-            />
+          <div className="flex items-center justify-end">
+            <FieldNotesButton value={entry?.notes || ""} onChange={v => handleNotesChange(f.id, v)} />
           </div>
           <div className="h-3 text-[9px] text-text-muted">
             {status === "saving" && "Saving…"}
