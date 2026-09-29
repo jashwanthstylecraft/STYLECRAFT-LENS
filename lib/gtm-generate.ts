@@ -211,7 +211,7 @@ async function resolveCatalogProductKind(sources: GtmSources): Promise<{ product
 // Text blob for lib/gtm-tier6-inference.ts's keyword-based hair_type
 // inference — every source that could plausibly mention hair type in
 // prose, not the structured spec fields already covered by gtm-derive.ts.
-function buildHairTypeSourceText(sources: GtmSources): string {
+export function buildHairTypeSourceText(sources: GtmSources): string {
   return [
     sources.tds?.product_description,
     (sources.salesKit?.key_features || []).map((f: any) => f.headline).filter(Boolean).join(" "),
@@ -224,7 +224,7 @@ function buildHairTypeSourceText(sources: GtmSources): string {
 // generateAllFields and generateSingleField need identical construction.
 // Fetches catalog products + brand hints once per call (cheap, small
 // admin-managed tables) rather than threading them through every caller.
-async function buildTier6ExtraInputs(sources: GtmSources, toolTypes: { type_key: string; label: string }[]) {
+export async function buildTier6ExtraInputs(sources: GtmSources, toolTypes: { type_key: string; label: string }[]) {
   const [catalogProducts, brandHints] = await Promise.all([listCatalogProducts(), listEnabledBrandNameHints()]);
   const catalogLineupRows: CatalogLineupRow[] = catalogProducts.map(p => ({ tool_type: p.tool_type, target_price: p.target_price, active: p.active, product_kind: p.product_kind }));
 

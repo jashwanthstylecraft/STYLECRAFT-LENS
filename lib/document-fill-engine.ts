@@ -9,15 +9,17 @@
 // exact same code — no HTTP round-trip between the chain driver and the
 // fill logic, no duplicated behavior to keep in sync.
 import { getProject } from "@/lib/db/projects";
-import { getOrCreateDocument, getDocumentFields, updateDocumentField, setDocumentSourceDocVersions, getTdsFieldsForProject, flattenDocumentFields } from "@/lib/db/documents";
+import { getOrCreateDocument, getDocumentFields, updateDocumentField, updateDocumentFieldMeta, setDocumentSourceDocVersions, getTdsFieldsForProject, flattenDocumentFields } from "@/lib/db/documents";
 import { getProjectReports } from "@/lib/db/reports";
 import { getLatestOutput } from "@/lib/project-outputs";
-import { GTM_FIELD_SCHEMA } from "@/lib/gtm-field-schema";
+import { GTM_FIELD_SCHEMA, type GtmFieldAnswer } from "@/lib/gtm-field-schema";
 import { deriveFieldsFromSources } from "@/lib/gtm-derive";
 import { getUploadedTdsContext, applyUploadedTdsFacts, buildTdsGroundingBlock } from "@/lib/gtm-uploaded-tds";
 import { getReferenceLinksContext, buildReferenceLinksPromptBlock } from "@/lib/gtm-reference-links";
 import { getPredecessorProductContext } from "@/lib/predecessor-product-context";
 import type { GtmSources } from "@/lib/gtm-generate";
+import { buildTier6ExtraInputs, buildHairTypeSourceText } from "@/lib/gtm-generate";
+import { applyTier6Inference } from "@/lib/gtm-tier6-inference";
 import { listActiveDocsForProject } from "@/lib/db/uploaded-source-docs";
 import { deriveFactsForDoc } from "@/lib/tds-doc-ingest";
 import { isRealAnswer, isAwaitingInternalInput, isNotDeterminable } from "@/lib/field-answer-state";
@@ -25,8 +27,10 @@ import { resolveBrandForProduct, getActiveVoiceGuide, buildVoiceBlock } from "@/
 import { generateMarketingDirection } from "@/lib/gtm-marketing-direction";
 import { generateProductFaqs } from "@/lib/gtm-product-faqs";
 import { applyBoxOnlyDerivation } from "@/lib/gtm-box-only";
+import { applyFeaturesAndExpertTip, applyCollectionKernelAdaptation, applyCoreConsumerBothNote } from "@/lib/gtm-features-and-tip";
 import { listCatalogProducts } from "@/lib/db/catalog-products";
 import { matchCatalogProductByName } from "@/lib/our-product-position";
+import { listToolTypes } from "@/lib/db/tool-types";
 import { getMarketingDefaults } from "@/lib/db/marketing-defaults";
 import { CONTENT_FORM_SCHEMA } from "@/lib/content-form-field-schema";
 import { generateContentForm } from "@/lib/content-form-generate";
@@ -150,12 +154,74 @@ export async function refillGtmFromSources(projectId: string, orgId: string, use
 
   const derived = deriveFieldsFromSources(sources.project, sources.salesKit, sources.tds, sources.activeReport);
   const uploadedTdsContext = await getUploadedTdsContext(projectId);
+  const referenceLinksContext = await getReferenceLinksContext(project.referenceUrls);
+  const isPreLaunch = !project.productUrl && !project.asin && !referenceLinksContext.hasLinks;
+  const predecessorContext = await getPredecessorProductContext(project.predecessorRef, project.orgId || orgId);
+  const tdsGroundingBlock = buildTdsGroundingBlock(uploadedTdsContext, isPreLaunch)
+    + (referenceLinksContext.hasLinks ? `\n\nREFERENCE SOURCES:\n${buildReferenceLinksPromptBlock(referenceLinksContext)}` : "")
+    + (predecessorContext.text ? `\n\n${predecessorContext.text}` : "");
+  const brand = await resolveBrandForProduct(project.productName);
+  const voiceBlock = buildVoiceBlock(await getActiveVoiceGuide(brand));
+  const matchedCatalogProduct = matchCatalogProductByName(project.productName, catalogProducts);
+
+  // ---- Pass 0: Tier 6 (Good/Better/Best x3, Hair Type, Manufacturer) +
+  // Tier 6.5 (Features full list/Expert Tip, Collection Kernel name-story
+  // adaptation, Core Consumer "Both" note) — NOT covered by Pass 1-3 below
+  // (those only re-check grounded/spec fields and Marketing Direction/FAQ/
+  // Box Only), so any of these left blank at initial-generation time
+  // (competitor data or catalog lineup not ready yet, most commonly —
+  // exactly the race this whole refill mechanism now runs automatically
+  // for, see the project page's post-analysis-completion call) never got a
+  // second chance until now. Mirrors lib/gtm-generate.ts's own Tier 6/6.5
+  // exactly, just re-run here — every one of these functions already
+  // self-gates on "still unresolved," so calling them unconditionally is
+  // safe and never touches an already-real answer.
+  const pass0ChangedIds: string[] = [];
+  if (Date.now() - routeStartTime > FILL_ENGINE_TIME_BUDGET_MS) {
+    console.warn(`[document-fill-engine] Skipping Tier 6/6.5 refill — already over the ${FILL_ENGINE_TIME_BUDGET_MS}ms budget after stale-extraction retries. These fields stay blank until the next fill run.`);
+  } else {
+    const pass0Fields: Record<string, GtmFieldAnswer> = {};
+    for (const f of fields) pass0Fields[f.field_id] = { answer: f.answer || "N/A", source: (f.source || "none") as any, sourceDetail: f.source_detail, flagged: !!f.flagged, notes: f.notes || undefined };
+
+    const toolTypes = await listToolTypes();
+    const tier6Extra = await buildTier6ExtraInputs(sources, toolTypes);
+    applyTier6Inference(pass0Fields, GTM_FIELD_SCHEMA, { hairTypeSourceText: buildHairTypeSourceText(sources), ...tier6Extra });
+    await applyFeaturesAndExpertTip(pass0Fields, GTM_FIELD_SCHEMA, sources, project.productName, routeStartTime, voiceBlock, tdsGroundingBlock, matchedCatalogProduct?.description ?? null);
+    await applyCollectionKernelAdaptation(pass0Fields, GTM_FIELD_SCHEMA, project.productName, matchedCatalogProduct?.collection ?? null, voiceBlock, tdsGroundingBlock);
+    await applyCoreConsumerBothNote(pass0Fields, GTM_FIELD_SCHEMA, project.productName, voiceBlock, tdsGroundingBlock);
+
+    for (const schemaField of GTM_FIELD_SCHEMA) {
+      const current = fieldsById.get(schemaField.id);
+      const updated = pass0Fields[schemaField.id];
+      if (!current || !updated) continue;
+
+      const answerChanged = updated.answer !== current.answer && isRealAnswer(updated.answer);
+      const notesChanged = !!updated.notes && updated.notes !== current.notes;
+      if (!answerChanged && !notesChanged) continue;
+
+      if (answerChanged) {
+        await updateDocumentField(document.id, schemaField.id, updated.answer, actorEmail, {
+          source: updated.source, sourceDetail: updated.sourceDetail, flagged: !!updated.flagged,
+        });
+      }
+      if (notesChanged) {
+        await updateDocumentFieldMeta(document.id, schemaField.id, { notes: updated.notes }, actorEmail);
+      }
+      pass0ChangedIds.push(schemaField.id);
+    }
+  }
+
+  // Pass 0 may have written fields Pass 1-3 below also read via `fields`/
+  // `fieldsById` — re-fetch so they never work off a stale pre-Pass-0
+  // snapshot (cheap: one more read against an already-open connection).
+  const fieldsAfterPass0 = pass0ChangedIds.length > 0 ? await getDocumentFields(document.id) : fields;
+  const fieldsByIdAfterPass0 = pass0ChangedIds.length > 0 ? new Map(fieldsAfterPass0.map(f => [f.field_id, f])) : fieldsById;
 
   // ---- Pass 1: GROUNDED/spec fields ----
   const groundedChangedIds: string[] = [];
   for (const schemaField of GTM_FIELD_SCHEMA) {
     if (schemaField.kind !== "grounded") continue;
-    const current = fieldsById.get(schemaField.id);
+    const current = fieldsByIdAfterPass0.get(schemaField.id);
     if (!current) continue;
     if (UNTOUCHABLE_SOURCES.has(current.source || "")) continue;
 
@@ -178,30 +244,22 @@ export async function refillGtmFromSources(projectId: string, orgId: string, use
   // ---- Pass 2: WRITTEN/narrative fields (Marketing Direction + Product FAQ) ----
   const marketingSchema = GTM_FIELD_SCHEMA.filter(f => f.section === "Marketing Direction" && f.kind === "written");
   const faqSchema = GTM_FIELD_SCHEMA.filter(f => f.section === "Product FAQ" && f.kind === "written");
-  const wantsMarketing = marketingSchema.some(f => wantsSourceReplacement(fieldsById.get(f.id)));
-  const wantsFaqs = faqSchema.some(f => wantsSourceReplacement(fieldsById.get(f.id)));
+  const wantsMarketing = marketingSchema.some(f => wantsSourceReplacement(fieldsByIdAfterPass0.get(f.id)));
+  const wantsFaqs = faqSchema.some(f => wantsSourceReplacement(fieldsByIdAfterPass0.get(f.id)));
 
   const regeneratedIds: string[] = [];
-  const referenceLinksContext = await getReferenceLinksContext(project.referenceUrls);
-  const isPreLaunch = !project.productUrl && !project.asin && !referenceLinksContext.hasLinks;
-  const predecessorContext = await getPredecessorProductContext(project.predecessorRef, project.orgId || orgId);
-  const tdsGroundingBlock = buildTdsGroundingBlock(uploadedTdsContext, isPreLaunch)
-    + (referenceLinksContext.hasLinks ? `\n\nREFERENCE SOURCES:\n${buildReferenceLinksPromptBlock(referenceLinksContext)}` : "")
-    + (predecessorContext.text ? `\n\n${predecessorContext.text}` : "");
   const overBudgetAfterPass1 = Date.now() - routeStartTime > FILL_ENGINE_TIME_BUDGET_MS;
   if (overBudgetAfterPass1 && (wantsMarketing || wantsFaqs)) {
     console.warn(`[document-fill-engine] Skipping Marketing Direction/FAQ regeneration — already over the ${FILL_ENGINE_TIME_BUDGET_MS}ms budget after Pass 1/stale-extraction retries. These fields stay blank until the next fill run.`);
   }
 
   if (!overBudgetAfterPass1 && (wantsMarketing || wantsFaqs)) {
-    const brand = await resolveBrandForProduct(project.productName);
-    const voiceBlock = buildVoiceBlock(await getActiveVoiceGuide(brand));
-    const gtmFieldsFlat = flattenDocumentFields(fields);
+    const gtmFieldsFlat = flattenDocumentFields(fieldsAfterPass0);
 
     if (wantsFaqs) {
       const faqFields = await generateProductFaqs(sources, gtmFieldsFlat, voiceBlock, tdsGroundingBlock);
       for (const schemaField of faqSchema) {
-        const current = fieldsById.get(schemaField.id);
+        const current = fieldsByIdAfterPass0.get(schemaField.id);
         if (!wantsSourceReplacement(current)) continue;
         const candidate = faqFields[schemaField.id];
         if (!candidate || !isRealAnswer(candidate.answer)) continue;
@@ -218,13 +276,12 @@ export async function refillGtmFromSources(projectId: string, orgId: string, use
     }
     if (!overBudgetBeforeMarketing && wantsMarketing) {
       const refreshedFlat = wantsFaqs ? flattenDocumentFields(await getDocumentFields(document.id)) : gtmFieldsFlat;
-      const matchedCatalogProduct = matchCatalogProductByName(project.productName, catalogProducts);
       const marketingFields = await generateMarketingDirection(
         sources, refreshedFlat, matchedCatalogProduct?.collection ?? null, catalogProducts, matchedCatalogProduct?.id ?? null,
         marketingDefaults.languages, voiceBlock, tdsGroundingBlock
       );
       for (const schemaField of marketingSchema) {
-        const current = fieldsById.get(schemaField.id);
+        const current = fieldsByIdAfterPass0.get(schemaField.id);
         if (!wantsSourceReplacement(current)) continue;
         const candidate = marketingFields[schemaField.id];
         if (!candidate || !isRealAnswer(candidate.answer)) continue;
@@ -238,7 +295,7 @@ export async function refillGtmFromSources(projectId: string, orgId: string, use
 
   // ---- Pass 3: Box Only section ----
   const boxOnlySchema = GTM_FIELD_SCHEMA.filter(f => f.section === "Box Only");
-  const wantsBoxOnly = boxOnlySchema.some(f => wantsSourceReplacement(fieldsById.get(f.id)));
+  const wantsBoxOnly = boxOnlySchema.some(f => wantsSourceReplacement(fieldsByIdAfterPass0.get(f.id)));
   const overBudgetAfterPass2 = Date.now() - routeStartTime > FILL_ENGINE_TIME_BUDGET_MS;
   if (overBudgetAfterPass2 && wantsBoxOnly) {
     console.warn(`[document-fill-engine] Skipping Box Only regeneration — already over the ${FILL_ENGINE_TIME_BUDGET_MS}ms budget. These fields stay blank until the next fill run.`);
@@ -247,12 +304,10 @@ export async function refillGtmFromSources(projectId: string, orgId: string, use
     const latestFields = flattenDocumentFields(await getDocumentFields(document.id));
     const boxFieldsMap: Record<string, { answer: string; source: string }> = {};
     for (const [id, answer] of Object.entries(latestFields)) boxFieldsMap[id] = { answer, source: "existing" };
-    const brand = await resolveBrandForProduct(project.productName);
-    const voiceBlock = buildVoiceBlock(await getActiveVoiceGuide(brand));
     await applyBoxOnlyDerivation(boxFieldsMap as any, boxOnlySchema, project.productName, voiceBlock, tdsGroundingBlock);
 
     for (const schemaField of boxOnlySchema) {
-      const current = fieldsById.get(schemaField.id);
+      const current = fieldsByIdAfterPass0.get(schemaField.id);
       if (!wantsSourceReplacement(current)) continue;
       const candidate = (boxFieldsMap as any)[schemaField.id];
       if (!candidate || candidate.source === "existing" || !isRealAnswer(candidate.answer)) continue;
@@ -274,9 +329,9 @@ export async function refillGtmFromSources(projectId: string, orgId: string, use
 
   return {
     filled: groundedChangedIds.length,
-    regenerated: regeneratedIds.length,
+    regenerated: pass0ChangedIds.length + regeneratedIds.length,
     stillAwaiting,
-    changedFieldIds: [...groundedChangedIds, ...regeneratedIds],
+    changedFieldIds: [...pass0ChangedIds, ...groundedChangedIds, ...regeneratedIds],
     factsRetried,
   };
 }
