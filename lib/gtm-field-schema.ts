@@ -323,7 +323,6 @@ export const GTM_FIELD_SCHEMA: GtmField[] = [
   field("core_consumer", "General", "Core Consumer", { uiControl: "select", options: ["Pro", "Retail", "Both"] }),
   field("why_creating_item", "General", "Why are we creating this item? (consumer need, competitive product, etc.)"),
   field("positioning_statement", "General", "What is the positioning statement? (story)"),
-  field("product_name_origin", "General", "Product Name Origin"),
   field("name_story_tie", "General", "How does this product name tie to the story?"),
   field("new_line_or_current", "General", "New Line or Current Collection?"),
   field("new_technology", "General", "New Technology?"),
@@ -399,7 +398,7 @@ export const GTM_FIELD_SCHEMA: GtmField[] = [
   field("motor_run_time", "Motor", "Run Time"),
   field("motor_recharge_time", "Motor", "Recharge Time"),
   field("motor_speed", "Motor", "Speed"),
-  field("motor_noise_level", "Motor", "Noise level", { uiControl: "select", options: ["Ultra Quiet", "Low", "Moderate"] }),
+  field("motor_noise_level", "Motor", "Noise level", { uiControl: "select", options: ["Good", "Better", "Best"] }),
   field("motor_noise_level_db", "Motor", "Noise Level (dB)", { family: "beauty" }),
 
   // Heat/Plate Technology — the parallel section for motorless styling
@@ -551,10 +550,8 @@ export const GTM_FIELD_SCHEMA: GtmField[] = [
   field("marketing_secondary_audience", "Marketing Direction", "Secondary Audience (if applicable)", { owner: "Marketing" }),
   field("marketing_consumer_barrier", "Marketing Direction", "Consumer Barrier (what do we need our marketing to solve for or what question do we need to answer?)", { owner: "Marketing" }),
   field("marketing_messaging_direction", "Marketing Direction", "Messaging Direction (tone, messaging ideas or inspo)", { owner: "Marketing" }),
-  field("marketing_product_name_origin", "Marketing Direction", "Product Name Origin", { owner: "Marketing" }),
   field("marketing_visual_direction", "Marketing Direction", "Visual direction (in-salon, lifestyle, product-focused, etc.)", { owner: "Marketing" }),
   field("marketing_content_ideas", "Marketing Direction", "Content ideas or territories (just direction not mandatory)", { owner: "Marketing" }),
-  field("marketing_languages", "Marketing Direction", "Languages", { owner: "Marketing" }),
   field("marketing_dos_donts", "Marketing Direction", "Do's / Don'ts", { owner: "Marketing" }),
   field("marketing_web_coverage", "Marketing Direction", "Web Coverage", { owner: "Marketing" }),
   field("marketing_ad_channels", "Marketing Direction", "Where should we be advertising? (based on priority and budget)", { owner: "Marketing" }),

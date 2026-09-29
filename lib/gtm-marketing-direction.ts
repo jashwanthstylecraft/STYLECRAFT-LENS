@@ -282,15 +282,6 @@ export async function generateMarketingDirection(
     result.marketing_previous_product_reference = { answer: siblings[0].name, source: "derived" };
   }
 
-  // Product Name Origin — re-export the already-resolved GTM field verbatim
-  // (zero AI call), same idiom as Box Only's box_product_name.
-  if (isRealAnswer(gtmFieldsFlat.product_name_origin)) {
-    result.marketing_product_name_origin = { answer: gtmFieldsFlat.product_name_origin, source: "derived" };
-  }
-
-  // Languages — seeded from the org default, never AI-guessed.
-  result.marketing_languages = { answer: languagesDefault, source: "category_default" };
-
   // Consumer Barrier framing — deterministic from real pricing data, never
   // guessed. Falls back to a neutral instruction when no pricing benchmarks
   // exist at all (pre-launch products, or a report with no compared prices).

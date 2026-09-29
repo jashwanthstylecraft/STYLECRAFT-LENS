@@ -9,9 +9,9 @@
 // content" discipline scripts/verify-gtm-workbook-export.ts's FAQ section
 // already established. What CAN be exercised offline — and is exercised
 // here — is every deterministic mechanism around the AI call: price-relation
-// framing, the tool-type-confusion guard, Previous Product Reference/
-// Languages/Product Name Origin resolution, and the exemplar anti-copy
-// similarity check against the real Jeezy Trimmer excerpts.
+// framing, the tool-type-confusion guard, Previous Product Reference
+// resolution, and the exemplar anti-copy similarity check against the real
+// Jeezy Trimmer excerpts.
 //
 // Run with: npx tsx scripts/verify-marketing-direction-flagship.ts
 
@@ -71,7 +71,7 @@ async function main() {
   assert(deriveToolTypeGuardClause("trimmer", []) === "", "zero siblings produces an EMPTY guard clause — never a fabricated confusion pair");
 
   // ---- Section 3: Full generateMarketingDirection call — deterministic fields only (no AI key present) ----
-  console.log("\n[3] generateMarketingDirection — Previous Product Reference/Languages/Product Name Origin resolve without any AI call");
+  console.log("\n[3] generateMarketingDirection — Previous Product Reference resolves without any AI call");
   const catalogProducts = [
     buildCatalogProduct({ id: "p1", name: "SC x Test Collab Trimmer", tool_type: "trimmer", collection: "Test Collab" }),
     buildCatalogProduct({ id: "p2", name: "SC x Test Collab Clipper", tool_type: "clipper", collection: "Test Collab" }),
@@ -85,7 +85,7 @@ async function main() {
       pricing_analysis: { target_price: "$259.95", competitor_prices: flagshipCompetitorRows },
     },
   } as any;
-  const gtmFieldsFlat = { product_name_origin: "Named in collaboration with a real collab partner." };
+  const gtmFieldsFlat = {};
 
   const result = await generateMarketingDirection(
     sources, gtmFieldsFlat, "Test Collab", catalogProducts, "p1",
@@ -94,8 +94,6 @@ async function main() {
 
   assert(result.marketing_previous_product_reference?.answer === "SC x Test Collab Clipper", `Previous Product Reference auto-resolves to the one real collection sibling (got "${result.marketing_previous_product_reference?.answer}")`);
   assert(result.marketing_previous_product_reference?.source === "derived", "Previous Product Reference is sourced as a real lookup, never an AI guess");
-  assert(result.marketing_product_name_origin?.answer === gtmFieldsFlat.product_name_origin, "Product Name Origin re-exports the already-resolved GTM field verbatim, zero AI call");
-  assert(result.marketing_languages?.answer.includes("French Canadian") && result.marketing_languages?.source === "category_default", "Languages seeds from the org default with source: category_default, never AI-guessed");
 
   const WRITTEN_IDS = ["marketing_primary_goal", "marketing_success_kpis", "marketing_launch_timing", "marketing_core_audience", "marketing_secondary_audience", "marketing_consumer_barrier", "marketing_messaging_direction", "marketing_visual_direction", "marketing_content_ideas", "marketing_dos_donts", "marketing_web_coverage", "marketing_ad_channels", "marketing_print_material", "marketing_trade_show_launch"];
   assert(WRITTEN_IDS.every(id => result[id] === undefined), "with no OpenAI/Gemini key configured, every AI-written field comes back absent rather than fabricated (matches the Product FAQ phase's own established discipline)");

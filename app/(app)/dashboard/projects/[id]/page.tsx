@@ -28,7 +28,6 @@ import {
   Undo2,
   AlertCircle,
   Mail,
-  BookmarkPlus,
   Star,
   Minus,
   Maximize2,
@@ -2065,26 +2064,6 @@ function ProductKnowledgeSection({
     }
   }
 
-  // GTM style-corpus work, Part C — seeds/overwrites the stored collection
-  // kernel (lib/db/collections.ts) from this document's own current
-  // Product Name Origin answer, so the next product in the same collection
-  // has real text to adapt from (lib/gtm-features-and-tip.ts's
-  // applyCollectionKernelAdaptation) instead of generating in a vacuum.
-  async function handleSaveAsKernel(fieldId: string) {
-    if (!documentId) return;
-    setFieldStatus(prev => ({ ...prev, [fieldId]: "regenerating" }));
-    try {
-      const res = await fetch(`/api/documents/gtm/${documentId}/fields/${fieldId}/save-as-kernel`, { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to save collection kernel");
-      toast.success(`Saved as "${data.collection.name}" collection kernel`);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to save collection kernel");
-    } finally {
-      setFieldStatus(prev => ({ ...prev, [fieldId]: "idle" }));
-    }
-  }
-
   // Tops up whatever's still N/A after the initial 77-field bulk generation.
   // The bulk pass (lib/gtm-generate.ts) has to fit ~77 fields' worth of AI
   // calls inside Vercel's fixed 60s function ceiling, so it chunks fields
@@ -2391,17 +2370,6 @@ function ProductKnowledgeSection({
                               className="p-0.5 text-text-muted hover:text-accent transition-colors disabled:opacity-50"
                             >
                               <RefreshCw className={`w-3 h-3 ${status === "regenerating" ? "animate-spin" : ""}`} />
-                            </button>
-                          )}
-                          {f.id === "product_name_origin" && complete && (
-                            <button
-                              type="button"
-                              title="Save this text as the collection's shared narrative kernel — future products in the same line will adapt from it"
-                              onClick={() => handleSaveAsKernel(f.id)}
-                              disabled={status === "regenerating"}
-                              className="p-0.5 text-text-muted hover:text-accent transition-colors disabled:opacity-50"
-                            >
-                              <BookmarkPlus className="w-3 h-3" />
                             </button>
                           )}
                           <button

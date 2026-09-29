@@ -74,7 +74,7 @@ function buildSyntheticFields(): Record<string, { answer: string; notes?: string
     motor_run_time: a("3 hours"),
     motor_recharge_time: a("90 minutes"),
     motor_speed: a("Single speed"),
-    motor_noise_level: a("Ultra Quiet"),
+    motor_noise_level: a("Best"),
     blade_name: a("DLC X-Pro Wide Blade"),
     fixed_blade: a("Fixed"),
     cutting_blade: a("DLC Deep Tooth"),

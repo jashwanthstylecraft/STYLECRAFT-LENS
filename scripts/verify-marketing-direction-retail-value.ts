@@ -88,8 +88,6 @@ async function main() {
   );
 
   assert(result.marketing_previous_product_reference === undefined, "with no collection, Previous Product Reference is left unset — never a guessed 'N/A — first in line' from AI");
-  assert(result.marketing_product_name_origin === undefined, "with no resolved product_name_origin upstream, Marketing Direction's own copy is left unset rather than inventing an origin story");
-  assert(result.marketing_languages?.answer.includes("French Canadian"), "Languages still seeds from the org default regardless of pricing tier");
 
   // ---- Section 4: finalizeFieldAnswers — honest "Not found" terminal for the unresolved lookup field ----
   console.log("\n[4] finalizeFieldAnswers — Previous Product Reference gets the honest 'Not found' terminal, not a fabricated N/A");
@@ -103,12 +101,9 @@ async function main() {
   assert(finalized.marketing_previous_product_reference?.answer !== "SC x Test Collab Clipper", "the value fixture's Previous Product Reference never picks up the flagship fixture's unrelated sibling — collection isolation holds");
 
   // ---- Section 6: Anti-leak — no verbatim Jeezy Trimmer exemplar text appears in this fixture's own AI-WRITTEN output ----
-  // Scoped to AI-written field ids only — marketing_languages/
-  // marketing_previous_product_reference/marketing_product_name_origin are
-  // deterministic seeds/lookups/re-exports (never routed through the
-  // exemplar-guarded AI path), so marketing_languages legitimately CAN equal
-  // the exemplar's own text: it's the org's real default footer, not
-  // AI-generated prose the copy-similarity guard was ever meant to police.
+  // Scoped to AI-written field ids only — marketing_previous_product_reference
+  // is a deterministic lookup (never routed through the exemplar-guarded AI
+  // path), so it's excluded from this check.
   console.log("\n[6] Anti-leak check — none of the real exemplar's marketing_* text appears verbatim in this run's AI-written output");
   const jeezyTrimmer = GTM_STYLE_EXEMPLARS.find(ex => ex.sku === "SC423B")!;
   const AI_WRITTEN_IDS = new Set(["marketing_primary_goal", "marketing_success_kpis", "marketing_launch_timing", "marketing_core_audience", "marketing_secondary_audience", "marketing_consumer_barrier", "marketing_messaging_direction", "marketing_visual_direction", "marketing_content_ideas", "marketing_dos_donts", "marketing_web_coverage", "marketing_ad_channels", "marketing_print_material", "marketing_trade_show_launch"]);

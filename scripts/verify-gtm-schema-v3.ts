@@ -38,7 +38,7 @@ async function main() {
   assert(coreConsumer?.uiControl === "select" && JSON.stringify(coreConsumer?.options) === JSON.stringify(["Pro", "Retail", "Both"]), "core_consumer is a Pro/Retail/Both select");
 
   const noiseLevel = byId.get("motor_noise_level");
-  assert(noiseLevel?.uiControl === "select" && JSON.stringify(noiseLevel?.options) === JSON.stringify(["Ultra Quiet", "Low", "Moderate"]), "motor_noise_level is an Ultra Quiet/Low/Moderate select");
+  assert(noiseLevel?.uiControl === "select" && JSON.stringify(noiseLevel?.options) === JSON.stringify(["Good", "Better", "Best"]), "motor_noise_level is a Good/Better/Best select");
   assert(!!byId.get("motor_recharge_time"), "new motor_recharge_time field exists");
 
   // Manual-fill-only fields (real ops/legal/marketing decisions — never
