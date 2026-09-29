@@ -65,7 +65,25 @@ function buildInputBullets(description: string | null | undefined): string[] {
   const parts = looksLikeProse
     ? description.split(/(?<=[.!?])\s+/)
     : description.split(/[,;](?!\d)/);
-  return parts.map(s => s.trim()).filter(s => s.length > 3);
+  const sentenceOrPhraseSplit = parts.map(s => s.trim()).filter(s => s.length > 3);
+  if (sentenceOrPhraseSplit.length > 1) return sentenceOrPhraseSplit;
+
+  // A single sentence/phrase came back — the description may still carry
+  // multiple distinct feature callouts with no sentence punctuation between
+  // them (a run-on typed as one line, or one per newline). Try progressively
+  // looser separators before accepting "this really is just one point":
+  // newlines, then dashes/bullet markers, then a bare comma/semicolon split
+  // (even on prose text) as the last resort.
+  const byNewline = description.split(/\r?\n+/).map(s => s.trim()).filter(s => s.length > 3);
+  if (byNewline.length > 1) return byNewline;
+
+  const byDashOrBullet = description.split(/(?:^|\s)[-•*]\s+/).map(s => s.trim()).filter(s => s.length > 3);
+  if (byDashOrBullet.length > 1) return byDashOrBullet;
+
+  const byComma = description.split(/[,;](?!\d)/).map(s => s.trim()).filter(s => s.length > 3);
+  if (byComma.length > 1) return byComma;
+
+  return sentenceOrPhraseSplit;
 }
 
 // Source #2 — our own listing: spec-derived sentences from TDS's own

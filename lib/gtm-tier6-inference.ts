@@ -104,6 +104,31 @@ export function deriveGoodBetterBestPerformance(
   return { answer: myTier, source: "derived", sourceDetail: { label } };
 }
 
+// "Good Better Best (Noise level)" — unlike Lineup/Performance above, this
+// isn't ranked against competitors (no reliable per-competitor dB signal
+// exists anywhere in this pipeline — extractCompetitorSpecs has no noise
+// extraction). Instead it's a fixed threshold read off our OWN
+// motor_noise_level_db value once that field has itself resolved (web
+// search or a manual entry, same-pass or earlier — this just reads
+// whatever's already in `fields` at Tier 6 time, see applyTier6Inference
+// below). Thresholds are a reasonable but genuinely invented cutoff for
+// personal-care small appliances (quiet clippers/trimmers ~55-65dB, hair
+// dryers commonly run louder) — not derived from any real dataset in this
+// codebase, so double-check them against real category norms before
+// trusting the output blindly.
+const NOISE_DB_BEST_MAX = 65;
+const NOISE_DB_BETTER_MAX = 75;
+
+export function deriveGoodBetterBestNoise(ourNoiseDb: number | null): GtmFieldAnswer | null {
+  if (ourNoiseDb == null) return null;
+  const tier = ourNoiseDb <= NOISE_DB_BEST_MAX ? "Best" : ourNoiseDb <= NOISE_DB_BETTER_MAX ? "Better" : "Good";
+  return {
+    answer: tier,
+    source: "derived",
+    sourceDetail: { label: `Derived from Noise Level (dB): ${ourNoiseDb}dB` },
+  };
+}
+
 // CHANGE 6 — Manufacturer auto-detect cascade: catalog record (most
 // authoritative, set when the analysis was built from a real catalog pick)
 // -> admin-editable name-prefix hint map (lib/db/brand-name-hints.ts) ->
@@ -306,6 +331,12 @@ export function applyTier6Inference(
   if (schema.some(f => f.id === "good_better_best_performance") && isUnresolved(fields, "good_better_best_performance") && input.performance) {
     const derived = deriveGoodBetterBestPerformance(input.performance.ourRpm, input.performance.ourMotorLabel, input.performance.competitors);
     if (derived) fields["good_better_best_performance"] = derived;
+  }
+  if (schema.some(f => f.id === "motor_noise_level") && isUnresolved(fields, "motor_noise_level")) {
+    const dbAnswer = fields["motor_noise_level_db"]?.answer;
+    const ourNoiseDb = dbAnswer ? parseFloat(dbAnswer.replace(/,/g, "").match(/[\d.]+/)?.[0] || "") : NaN;
+    const derived = deriveGoodBetterBestNoise(isFinite(ourNoiseDb) ? ourNoiseDb : null);
+    if (derived) fields["motor_noise_level"] = derived;
   }
   if (schema.some(f => f.id === "hair_type") && isUnresolved(fields, "hair_type")) {
     const derived = inferHairType(input.hairTypeSourceText);

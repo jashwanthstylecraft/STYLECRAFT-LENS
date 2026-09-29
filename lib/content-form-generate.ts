@@ -61,6 +61,38 @@ function truncateToLimit(text: string, limit: number): string {
   return text.slice(0, limit).trim();
 }
 
+// Deterministic floor for short_description — the project's own free-text
+// Description (typed on the analyze/new-project form) is real, human-
+// written content, so when the AI call for this field's group fails,
+// times out, or gets quality-guarded away, truncating that description to
+// fit the char limit is a far better floor than leaving the field blank.
+// Truncates at the last full sentence that fits; if even the first
+// sentence overruns the limit, falls back to the last whole word plus an
+// ellipsis — never cuts a word in half.
+export function deriveShortDescriptionFallback(description: string | null | undefined, limit: number): string | null {
+  const trimmed = (description || "").trim();
+  if (!trimmed) return null;
+  if (trimmed.length <= limit) return trimmed;
+
+  const sentences = trimmed.split(/(?<=[.!?])\s+/);
+  let out = "";
+  for (const s of sentences) {
+    const next = out ? `${out} ${s}` : s;
+    if (next.length > limit) break;
+    out = next;
+  }
+  if (out) return out;
+
+  const words = trimmed.split(/\s+/);
+  out = "";
+  for (const w of words) {
+    const next = out ? `${out} ${w}` : w;
+    if (next.length > limit - 1) break;
+    out = next;
+  }
+  return out ? `${out}…` : `${trimmed.slice(0, limit - 1)}…`;
+}
+
 // One grouped call + at most one combined retry for whatever violated (voice
 // rules, a competitor brand name, or an over-limit char field) — same
 // single-retry discipline as lib/gtm-product-faqs.ts / lib/gtm-marketing-
@@ -352,6 +384,14 @@ export async function generateContentForm(
   ]);
 
   Object.assign(result, titles, descriptions, bullets, adSheetAndWeb);
+
+  if (!isRealAnswer(result.short_description?.answer)) {
+    const fallback = deriveShortDescriptionFallback(sources.project.description, 229);
+    if (fallback) {
+      result.short_description = { answer: fallback, source: "derived", sourceDetail: { label: "Truncated from the project's own Description" } };
+    }
+  }
+
   return result;
 }
 
