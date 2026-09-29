@@ -157,6 +157,34 @@ export default function ProjectDetailPage() {
     }
   };
 
+  // Closes a real gap: GTM generation only ever reads the competitive
+  // analysis report ONCE, at the moment its own "tds" phase happens to run
+  // (lib/project-generation-engine.ts) — it never revisits that phase. Now
+  // that a project's GTM/TDS pipeline runs CONCURRENTLY with its analysis
+  // (instead of the analysis always finishing first), GTM can easily
+  // generate before the report exists yet, and nothing previously pulled
+  // that data back in once the analysis did complete — only the manual
+  // "Fill blanks from sources" button did. Best-effort, client-side (same
+  // "never block on a side effect" discipline as everywhere else in this
+  // file) — if the GTM document doesn't exist yet, there's nothing to
+  // backfill (the main pipeline will pick up the now-real report on its own
+  // when it gets there), so this is a no-op in that case.
+  async function refillGtmFromNewReport() {
+    try {
+      const docRes = await fetch(`/api/documents/gtm?projectId=${id}`);
+      const docData = await docRes.json();
+      if (!docData.document) return;
+      const res = await fetch(`/api/documents/gtm/${docData.document.id}/refill-from-sources`, { method: "POST" });
+      if (res.ok) {
+        const result = await res.json();
+        if ((result.changed || 0) > 0) toast.success(`GTM updated with the new analysis data (${result.changed} field${result.changed === 1 ? "" : "s"})`);
+      }
+    } catch {
+      // Best-effort — the analysis itself already completed successfully;
+      // never surface this as a user-facing error.
+    }
+  }
+
   useEffect(() => {
     if (id) fetchProjectDetails();
   }, [id]);
@@ -552,7 +580,7 @@ export default function ProjectDetailPage() {
             <ProgressPanel
               analysisId={activeAnalysisId}
               productName={project?.productName || project?.name || ""}
-              onComplete={() => { setActiveAnalysisId(null); fetchProjectDetails(); }}
+              onComplete={() => { setActiveAnalysisId(null); fetchProjectDetails(); refillGtmFromNewReport(); }}
               onError={(msg: string) => { toast.error(msg || "Analysis failed"); setActiveAnalysisId(null); }}
               onCancelled={() => { toast("Analysis cancelled"); setActiveAnalysisId(null); }}
             />
