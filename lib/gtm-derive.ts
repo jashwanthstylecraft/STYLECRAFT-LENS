@@ -170,6 +170,15 @@ export function deriveFieldsFromSources(
   set("motor_run_time", pick(t.motor_run_time, "tds"));
   set("motor_speed", pick(t.motor_speed, "tds"));
 
+  // Heat/Plate Technology (beauty family — curling/flat irons, hair dryers)
+  // — these 3 TDS field ids were never read here, meaning a project's own
+  // scraped/entered TDS data for them never reached GTM directly; they fell
+  // through to the AI/web-search tier instead of the reliable direct-copy
+  // path every other spec field already gets.
+  set("plate_material", pick(t.plate_material, "tds"));
+  set("heater_type", pick(t.heater_type, "tds"));
+  set("max_temp_class", pick(t.max_temp_class, "tds"));
+
   // Blades
   set("blade_name", pick(t.blade_name, "tds"));
   set("fixed_blade", pick(t.fixed_blade, "tds"));

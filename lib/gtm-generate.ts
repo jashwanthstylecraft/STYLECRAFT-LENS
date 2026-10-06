@@ -406,10 +406,23 @@ function mergeField(schemaField: GtmField, aiRaw: Record<string, { answer: strin
   const got = aiRaw?.[schemaField.id];
   const aiAnswer = coerceAiAnswer(got?.answer);
   const aiUsable = !!aiAnswer && aiAnswer.toUpperCase() !== "N/A" && aiAnswer.toUpperCase() !== "TBD" && matchesFieldOptions(schemaField, aiAnswer);
+  const derivedValue = derived[schemaField.id];
+
+  // HARD-GROUNDED fields (specs: dimensions, weight, RPM, blade names,
+  // motor type, etc.) must "copy values exactly as they appear in the
+  // sources" per this same file's own system prompt — never an AI estimate
+  // once a real source value exists. `derived` already IS that direct
+  // source copy (project record / TDS / Sales Kit — see lib/gtm-derive.ts),
+  // so for grounded fields it wins over the AI's own answer whenever
+  // present; AI only fills a grounded field when derived has nothing.
+  // WRITTEN/narrative fields keep the AI-first behavior unchanged — most of
+  // them have no structured source to copy from at all.
+  if (schemaField.kind === "grounded" && derivedValue) return { field: derivedValue, fromAi: false };
+
   if (aiUsable) {
     return { field: { answer: aiAnswer!, source: (got?.source as GtmFieldSource) || "multiple" }, fromAi: true };
   }
-  if (derived[schemaField.id]) return { field: derived[schemaField.id], fromAi: false };
+  if (derivedValue) return { field: derivedValue, fromAi: false };
   return { field: { answer: "N/A", source: "none" }, fromAi: false };
 }
 
