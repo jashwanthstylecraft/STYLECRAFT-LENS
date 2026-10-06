@@ -216,8 +216,16 @@ export async function setActiveGtmWorkbookTemplate(id: string, industry: GtmTemp
 
 export async function deleteGtmWorkbookTemplate(id: string): Promise<void> {
   if (isSupabaseConfigured) {
+    // Look up the Storage path first — deleting the row alone would leak
+    // the uploaded .xlsx in the "gtm-workbook-templates" bucket forever
+    // (nothing else ever references file_path once this row is gone).
+    const { data: row } = await supabaseAdmin.from("gtm_workbook_templates").select("file_path").eq("id", id).maybeSingle();
     const { error } = await supabaseAdmin.from("gtm_workbook_templates").delete().eq("id", id);
     if (error) throw error;
+    if (row?.file_path) {
+      const { error: storageError } = await supabaseAdmin.storage.from(STORAGE_BUCKET).remove([row.file_path]);
+      if (storageError) console.warn(`Failed to remove GTM workbook template file "${row.file_path}" from Storage:`, storageError.message);
+    }
     return;
   }
   const idx = memoryDb.gtmWorkbookTemplates.findIndex(t => t.id === id);

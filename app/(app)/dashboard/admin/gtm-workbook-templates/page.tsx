@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ShieldAlert, RefreshCw, Loader2, AlertCircle, Upload, CheckCircle2, ChevronDown, ChevronRight } from "lucide-react";
+import { ShieldAlert, RefreshCw, Loader2, AlertCircle, Upload, CheckCircle2, ChevronDown, ChevronRight, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/Badge";
 import { Spinner } from "@/components/ui/Spinner";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import type { GtmWorkbookTemplateRow, GtmTemplateIndustry } from "@/lib/db/gtm-workbook-templates";
 
 const INDUSTRY_LABELS: Record<GtmTemplateIndustry, string> = {
@@ -20,6 +21,8 @@ export default function AdminGtmWorkbookTemplatesPage() {
   const [error, setError] = useState<string | null>(null);
   const [uploadingIndustry, setUploadingIndustry] = useState<GtmTemplateIndustry | null>(null);
   const [activatingId, setActivatingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const barberFileInputRef = useRef<HTMLInputElement>(null);
   const beautyFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -114,6 +117,22 @@ export default function AdminGtmWorkbookTemplatesPage() {
     }
   }
 
+  async function handleDelete(id: string) {
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/admin/gtm-workbook-templates/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to delete");
+      toast.success("Template removed");
+      setConfirmDeleteId(null);
+      await load();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete template");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
@@ -176,6 +195,7 @@ export default function AdminGtmWorkbookTemplatesPage() {
             fileInputRef={barberFileInputRef}
             onUpload={e => handleUpload(e, "barber")}
             onActivate={handleActivate}
+            onDeleteRequest={setConfirmDeleteId}
           />
           <IndustrySection
             industry="beauty"
@@ -185,9 +205,20 @@ export default function AdminGtmWorkbookTemplatesPage() {
             fileInputRef={beautyFileInputRef}
             onUpload={e => handleUpload(e, "beauty")}
             onActivate={handleActivate}
+            onDeleteRequest={setConfirmDeleteId}
           />
         </>
       )}
+
+      <ConfirmDialog
+        isOpen={!!confirmDeleteId}
+        title="Delete this template?"
+        description="This permanently removes the uploaded workbook and its file. This action is irreversible."
+        confirmLabel="Delete template"
+        loading={deletingId === confirmDeleteId}
+        onConfirm={() => { if (confirmDeleteId) handleDelete(confirmDeleteId); }}
+        onClose={() => setConfirmDeleteId(null)}
+      />
     </div>
   );
 }
@@ -200,6 +231,7 @@ function IndustrySection({
   fileInputRef,
   onUpload,
   onActivate,
+  onDeleteRequest,
 }: {
   industry: GtmTemplateIndustry;
   templates: GtmWorkbookTemplateRow[];
@@ -208,6 +240,7 @@ function IndustrySection({
   fileInputRef: React.RefObject<HTMLInputElement>;
   onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onActivate: (id: string) => void;
+  onDeleteRequest: (id: string) => void;
 }) {
   return (
     <div className="space-y-2">
@@ -221,7 +254,7 @@ function IndustrySection({
       </div>
 
       <div className="border border-border rounded-xl overflow-hidden">
-        <div className="grid grid-cols-[1fr_140px_120px_140px_100px] gap-3 px-4 py-2.5 bg-surface-3/30 border-b border-border text-[10px] font-bold text-text-muted uppercase tracking-wider">
+        <div className="grid grid-cols-[1fr_140px_120px_140px_140px] gap-3 px-4 py-2.5 bg-surface-3/30 border-b border-border text-[10px] font-bold text-text-muted uppercase tracking-wider">
           <span>Name</span>
           <span>Sheets Found</span>
           <span>Status</span>
@@ -236,7 +269,7 @@ function IndustrySection({
         ) : (
           <div className="divide-y divide-border/60">
             {templates.map(t => (
-              <TemplateRow key={t.id} template={t} activatingId={activatingId} onActivate={onActivate} />
+              <TemplateRow key={t.id} template={t} activatingId={activatingId} onActivate={onActivate} onDeleteRequest={onDeleteRequest} />
             ))}
           </div>
         )}
@@ -249,10 +282,12 @@ function TemplateRow({
   template: t,
   activatingId,
   onActivate,
+  onDeleteRequest,
 }: {
   template: GtmWorkbookTemplateRow;
   activatingId: string | null;
   onActivate: (id: string) => void;
+  onDeleteRequest: (id: string) => void;
 }) {
   const [showInspection, setShowInspection] = useState(false);
   const sheetCount = t.sheet_summary?.sheetNames?.length || 0;
@@ -261,7 +296,7 @@ function TemplateRow({
 
   return (
     <div>
-      <div className="grid grid-cols-[1fr_140px_120px_140px_100px] gap-3 px-4 py-3 items-center text-xs">
+      <div className="grid grid-cols-[1fr_140px_120px_140px_140px] gap-3 px-4 py-3 items-center text-xs">
         <span className="font-semibold text-text-primary truncate flex items-center gap-1.5">
           {t.name}
           {inspection && (
@@ -292,16 +327,26 @@ function TemplateRow({
           )}
         </span>
         <span className="text-text-muted text-[11px]">{new Date(t.uploaded_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
-        {!t.is_active ? (
+        <span className="flex items-center gap-1.5">
+          {!t.is_active && (
+            <button
+              type="button"
+              onClick={() => onActivate(t.id)}
+              disabled={activatingId === t.id}
+              className="flex items-center gap-1 px-2 py-1 border border-border hover:border-border-strong text-text-secondary text-[10px] font-bold rounded-md transition-colors disabled:opacity-50"
+            >
+              {activatingId === t.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "Activate"}
+            </button>
+          )}
           <button
             type="button"
-            onClick={() => onActivate(t.id)}
-            disabled={activatingId === t.id}
-            className="flex items-center gap-1 px-2 py-1 border border-border hover:border-border-strong text-text-secondary text-[10px] font-bold rounded-md transition-colors disabled:opacity-50"
+            onClick={() => onDeleteRequest(t.id)}
+            title="Delete template"
+            className="p-1.5 border border-border hover:border-danger/40 hover:text-danger text-text-muted rounded-md transition-colors"
           >
-            {activatingId === t.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "Activate"}
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
-        ) : null}
+        </span>
       </div>
       {showInspection && inspection && (
         <div className="px-4 pb-4 space-y-3 bg-surface-3/20">
