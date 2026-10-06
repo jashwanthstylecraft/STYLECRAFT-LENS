@@ -358,6 +358,15 @@ export const GTM_FIELD_SCHEMA: GtmField[] = [
   field("certification_needed", "General", "Certification Needed"),
   field("rating_label", "General", "Rating Label", { legacyOptional: true }),
   field("manufacturer", "General", "Manufacturer"),
+  // New fields found by diffing the Oct 2026 Barber/Beauty workbook
+  // templates against the in-app schema (label inspection on upload) —
+  // both only confirmed present in the Beauty template's Product Knowledge
+  // sheet so far; left with no family restriction since there's no
+  // evidence either is actually beauty-specific (the Barber template may
+  // simply not have been scanned on a row that happened to include them) —
+  // revisit if the Barber template turns out to genuinely lack these.
+  field("distributed_by", "General", "Distributed By", { legacyOptional: true }),
+  field("collection", "General", "Collection", { legacyOptional: true }),
 
   // Packaging & Logistics
   field("dieline", "Packaging & Logistics", "Dieline", { legacyOptional: true }),
@@ -479,6 +488,10 @@ export const GTM_FIELD_SCHEMA: GtmField[] = [
 
   // Charging — real barber template section; absent from beauty (beauty's
   // own electrical facts live under Electrical & Power above instead).
+  // "Charging Base" (whether one ships at all) is a new field found in the
+  // Oct 2026 Barber template — distinct from charging_base_color below
+  // (which only answers what color it is, not whether it exists).
+  field("charging_base", "Charging", "Charging Base", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
   field("charging_light_color", "Charging", "Light Color", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
   field("charging_base_color", "Charging", "Base Color", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
   field("charging_cord_color", "Charging", "Cord Color", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
@@ -586,6 +599,14 @@ export const GTM_FIELD_SCHEMA: GtmField[] = [
   // below need their own storage (lib/gtm-box-only.ts).
   field("box_main_statement", "Box Only", "Main Statement", { helperText: "One punchy box-front statement, ≤15 words, distilled from the Positioning Statement." }),
   ...groupFields("box_feature", "Box Only", "Box Feature", 6),
+  // New fields found by diffing the Oct 2026 Barber/Beauty workbook
+  // templates against the in-app schema (label inspection on upload).
+  // engineer_approved appeared in BOTH templates' BOX ONLY sheet, no
+  // family restriction; the other 3 so far only confirmed in Beauty's.
+  field("engineer_approved", "Box Only", "Engineer Approved", { legacyOptional: true }),
+  field("box_made_in", "Box Only", "Made In", { legacyOptional: true }),
+  field("box_social_handles", "Box Only", "Social Handles", { legacyOptional: true }),
+  field("box_copyright_year", "Box Only", "Copyright Year", { legacyOptional: true }),
 ];
 
 export const GTM_SECTIONS = Array.from(new Set(GTM_FIELD_SCHEMA.map(f => f.section)));
