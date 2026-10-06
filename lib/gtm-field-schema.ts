@@ -485,6 +485,14 @@ export const GTM_FIELD_SCHEMA: GtmField[] = [
   field("guards_type", "Guards", "Type", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
   field("guards_qty", "Guards", "Qty", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
   field("guards_color", "Guards", "Color", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
+  // "# Comb Attachments" — new field from the Oct 2026 Barber template,
+  // listed under its own "WEB ONLY - SPEC CHART" heading rather than here
+  // under Guards. Kept distinct from guards_qty rather than assumed to be
+  // the same field — guards_qty is an internal ops/packaging count, this is
+  // the web-listing-facing attachment count, and the template separates
+  // them structurally; merge them later if they turn out to always be the
+  // same number in practice.
+  field("comb_attachments_count", "Guards", "# Comb Attachments", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
 
   // Charging — real barber template section; absent from beauty (beauty's
   // own electrical facts live under Electrical & Power above instead).
