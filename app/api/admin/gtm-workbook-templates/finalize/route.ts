@@ -48,9 +48,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Missing required sheet(s): ${sheetSummary.missingRequiredSheets.join(", ")}` }, { status: 400 });
     }
 
-    // Part 1.2's "template inspection on upload" — only meaningful for a
-    // beauty upload (barber IS the reference, nothing to diff it against).
-    const fieldInspection = resolvedIndustry === "beauty" ? buildGtmTemplateFieldInspection(buffer) : null;
+    // Part 1.2's "template inspection on upload" — runs for every upload
+    // (barber included); see the sibling route.ts's identical comment for
+    // why (the reference labels are static, not tied to whatever's
+    // currently active).
+    const fieldInspection = buildGtmTemplateFieldInspection(buffer);
 
     const template = await createGtmWorkbookTemplateFromStoragePath({
       name: name || fileName || "Untitled template",

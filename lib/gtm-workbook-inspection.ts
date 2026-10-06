@@ -12,19 +12,22 @@ import { inspectGtmWorkbookLabels, diffTemplateLabels, LabelDiff } from "./gtm-w
 import { getReferenceLabelsForSheet } from "./gtm-workbook-data-mapper";
 
 // The 5 tabs the export engine actually fills — see
-// lib/gtm-workbook-render.ts/gtm-workbook-data-mapper.ts. Only run for a
-// BEAUTY upload; a barber upload IS the reference, nothing to diff it
-// against.
+// lib/gtm-workbook-render.ts/gtm-workbook-data-mapper.ts. Runs for every
+// upload, barber included — the comparison basis (getReferenceLabelsForSheet,
+// below) is a static, code-level label set captured from the original
+// reference template, not whatever happens to be the currently-active
+// barber upload, so a fresh barber re-upload is just as worth checking
+// against it as a beauty one.
 const CONTENT_TABS = ["Product Knowledge", "BOX ONLY", "Marketing Direction", "Product FAQ", "Final Copy"] as const;
 
 export type GtmTemplateFieldInspection = Record<string, LabelDiff>;
 
-// Called at upload/finalize time for a beauty-industry template (see
+// Called at upload/finalize time for every template (see
 // app/api/admin/gtm-workbook-templates/route.ts and .../finalize/route.ts).
 // Stored on gtm_workbook_templates.field_inspection and rendered in Settings
-// so an admin can see exactly what shares a label with barber, what's new
-// to this template, and what barber has that this template is missing —
-// before ever trusting the export.
+// so an admin can see exactly what shares a label with the reference,
+// what's new to this template, and what the reference has that this
+// template is missing — before ever trusting the export.
 export function buildGtmTemplateFieldInspection(buffer: Buffer): GtmTemplateFieldInspection {
   const zip = new PizZip(buffer);
   const result: GtmTemplateFieldInspection = {};

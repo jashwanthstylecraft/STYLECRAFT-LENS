@@ -51,9 +51,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Missing required sheet(s): ${sheetSummary.missingRequiredSheets.join(", ")}` }, { status: 400 });
     }
 
-    // Part 1.2's "template inspection on upload" — only meaningful for a
-    // beauty upload (barber IS the reference, nothing to diff it against).
-    const fieldInspection = resolvedIndustry === "beauty" ? buildGtmTemplateFieldInspection(buffer) : null;
+    // Part 1.2's "template inspection on upload" — runs for every upload
+    // (barber included). The comparison basis is a static, code-level
+    // reference label set (lib/gtm-workbook-data-mapper.ts's
+    // getReferenceLabelsForSheet), not whatever's currently active as
+    // "barber" — so a fresh barber re-upload is just as worth checking
+    // against it as a beauty one, especially right after the previous
+    // template(s) were removed and a new one is going in blind.
+    const fieldInspection = buildGtmTemplateFieldInspection(buffer);
 
     const template = await createGtmWorkbookTemplate({
       name,
