@@ -6,8 +6,9 @@
 // added good_better_best_performance and reworked manufacturer the same way.
 import { computeTiers } from "./pricing-analysis";
 import { GtmFieldAnswer } from "./gtm-field-schema";
-import { extractCompetitorSpecs } from "./spec-extraction";
+import { extractCompetitorSpecs, parseNumber } from "./spec-extraction";
 import { brandMatchesTitle } from "./legacy-brand-discovery";
+import { isRealAnswer } from "./field-answer-state";
 
 export interface DerivedAnswer {
   answer: string;
@@ -84,6 +85,11 @@ function median(values: number[]): number {
   return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
 }
 
+// Performance uses Standard/Premium/Elite (not computeTiers' generic Good/
+// Better/Best) — per explicit request, matching how an old pre-automation
+// product's real sheet actually labeled this field.
+const PERFORMANCE_TIER_LABELS: Record<string, string> = { Good: "Standard", Better: "Premium", Best: "Elite" };
+
 export function deriveGoodBetterBestPerformance(
   ourRpm: number | null,
   ourMotorLabel: string,
@@ -96,8 +102,9 @@ export function deriveGoodBetterBestPerformance(
   if (competitorRpms.length < 1) return null;
 
   const tiers = computeTiers([ourRpm, ...competitorRpms]);
-  const myTier = tiers[0];
-  if (!myTier) return null;
+  const rawTier = tiers[0];
+  if (!rawTier) return null;
+  const myTier = PERFORMANCE_TIER_LABELS[rawTier] || rawTier;
 
   const medianRpm = Math.round(median(competitorRpms));
   const label = `${myTier} — ${ourRpm}rpm${ourMotorLabel ? ` ${ourMotorLabel}` : ""} vs competitor median ${medianRpm}rpm`;
@@ -329,7 +336,16 @@ export function applyTier6Inference(
     if (derived) fields["good_better_best"] = derived;
   }
   if (schema.some(f => f.id === "good_better_best_performance") && isUnresolved(fields, "good_better_best_performance") && input.performance) {
-    const derived = deriveGoodBetterBestPerformance(input.performance.ourRpm, input.performance.ourMotorLabel, input.performance.competitors);
+    // input.performance.ourRpm is sourced from the TDS document
+    // (extractOurSpecsFromTds) — chronically null while TDS generation
+    // stays off via the isTdsEnabled feature flag, which made this
+    // derivation permanently unreachable for every project, not just a
+    // one-off gap. Falls back to this SAME document's own motor_rpm field,
+    // already resolved by the main AI/web-search call earlier in this
+    // generation pass (Tier 6 runs strictly after it) — a real,
+    // already-grounded number, not a new guess.
+    const ourRpm = input.performance.ourRpm ?? (isRealAnswer(fields["motor_rpm"]?.answer) ? parseNumber(fields["motor_rpm"].answer) : null);
+    const derived = deriveGoodBetterBestPerformance(ourRpm, input.performance.ourMotorLabel, input.performance.competitors);
     if (derived) fields["good_better_best_performance"] = derived;
   }
   if (schema.some(f => f.id === "motor_noise_level") && isUnresolved(fields, "motor_noise_level")) {

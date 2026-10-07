@@ -332,13 +332,15 @@ export const GTM_FIELD_SCHEMA: GtmField[] = [
   // deriveGoodBetterBestPerformance, both built on lib/pricing-analysis.ts's
   // computeTiers 3-way tertile split) — Lineup ranks this product's price
   // against its own catalog siblings, Performance ranks its RPM against
-  // competitors', and BOTH only ever produce one of exactly these 3 labels.
-  // Constraining the UI/AI answer to a select of the same 3 values means an
-  // AI/web-tier guess can never drift onto a different label (an old
-  // pre-automation product's real sheet used "Standard/Premium/Elite" here,
-  // but that's not what this app's own derivation produces today).
+  // competitors'. Constraining the UI/AI answer to a select means an AI/web-
+  // tier guess can never drift onto an unexpected label.
   field("good_better_best", "General", "Good Better Best (Lineup)", { uiControl: "select", options: ["Good", "Better", "Best"] }),
-  field("good_better_best_performance", "General", "Good Better Best (Performance)", { uiControl: "select", options: ["Good", "Better", "Best"] }),
+  // Performance uses Standard/Premium/Elite, not Good/Better/Best — per
+  // explicit request, matching how an old pre-automation product's real
+  // sheet actually labeled this field. deriveGoodBetterBestPerformance maps
+  // computeTiers' generic Good/Better/Best tertile straight onto these 3
+  // labels, so the derivation and the select stay in lockstep.
+  field("good_better_best_performance", "General", "Good Better Best (Performance)", { uiControl: "select", options: ["Standard", "Premium", "Elite"] }),
   field("hair_type", "General", "Hair Type"),
   ...groupFields("features_full_list", "General", "Feature", 4),
   field("up_sell", "General", "Up-sell (Sales play opportunity)"),
@@ -609,14 +611,14 @@ export const GTM_FIELD_SCHEMA: GtmField[] = [
   // below need their own storage (lib/gtm-box-only.ts).
   field("box_main_statement", "Box Only", "Main Statement", { helperText: "One punchy box-front statement, ≤15 words, distilled from the Positioning Statement." }),
   ...groupFields("box_feature", "Box Only", "Box Feature", 6),
-  // New fields found by diffing the Oct 2026 Barber/Beauty workbook
-  // templates against the in-app schema (label inspection on upload).
-  // engineer_approved appeared in BOTH templates' BOX ONLY sheet, no
-  // family restriction; the other 3 so far only confirmed in Beauty's.
-  field("engineer_approved", "Box Only", "Engineer Approved"),
-  field("box_made_in", "Box Only", "Made In"),
-  field("box_social_handles", "Box Only", "Social Handles"),
-  field("box_copyright_year", "Box Only", "Copyright Year"),
+  // engineer_approved / box_made_in / box_social_handles / box_copyright_year
+  // — found by diffing the Oct 2026 Barber/Beauty workbook templates against
+  // the in-app schema, but deliberately NOT added as in-app GTM fields: per
+  // explicit request, these stay blank in the exported workbook for a human
+  // to fill in by hand rather than being AI-generated/shown in Lens. Never
+  // wired into lib/gtm-workbook-data-mapper.ts's export mapping either, so
+  // the template's own cells for these are untouched (left exactly as
+  // blank as the template itself defines them).
 ];
 
 export const GTM_SECTIONS = Array.from(new Set(GTM_FIELD_SCHEMA.map(f => f.section)));

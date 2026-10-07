@@ -90,7 +90,7 @@ async function main() {
     { motor_type: "7,000rpm brushless motor", specifications: [{ name: "RPM", value: "7,000" }], feature_bullets: [] },
   ];
   const performance = deriveGoodBetterBestPerformance(7800, "Brushless Motor (EON Digital Brushless)", competitors);
-  assert(performance?.answer === "Best", "Performance ranks our 7,800rpm above all 3 competitors as Best");
+  assert(performance?.answer === "Elite", "Performance ranks our 7,800rpm above all 3 competitors as Elite (Standard/Premium/Elite, not Good/Better/Best)");
   assert(
     !!performance?.sourceDetail?.label?.includes("7800rpm") && !!performance?.sourceDetail?.label?.includes("vs competitor median"),
     `Performance's citation names our RPM and the competitor median (got: ${performance?.sourceDetail?.label})`

@@ -37,7 +37,7 @@ function findSpecValue(specAndAttr: RainforestSpec[], labels: string[]): string 
   return null;
 }
 
-function parseNumber(s: string | null): number | null {
+export function parseNumber(s: string | null): number | null {
   if (!s) return null;
   const match = s.replace(/,/g, "").match(/[\d.]+/);
   return match ? parseFloat(match[0]) : null;

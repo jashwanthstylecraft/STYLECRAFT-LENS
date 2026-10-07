@@ -439,6 +439,22 @@ function applyCategoryDefaults(fields: Record<string, GtmFieldAnswer>, schema: G
   }
 }
 
+// Deterministic last-resort for positioning_statement — see its call site
+// in generateAllFields for why this exists. companyContext is usually
+// already prose (the analyze/project form's own "Positioning Context"
+// field), so this mostly just surfaces it as-is; keyDiff is appended only
+// when it adds real information companyContext doesn't already cover
+// (a crude substring check, good enough to avoid an obviously redundant
+// sentence without needing another AI call).
+export function derivePositioningStatementFallback(companyContext: string | null | undefined, keyDiff: string | null | undefined): string | null {
+  const context = (companyContext || "").trim();
+  if (!context) return null;
+  const diff = (keyDiff || "").trim();
+  if (!diff || context.toLowerCase().includes(diff.toLowerCase())) return context;
+  const joiner = /[.!?]$/.test(context) ? " " : ". ";
+  return `${context}${joiner}Key differentiator: ${diff}.`;
+}
+
 // Full 77-field generation: AI (if available) -> deterministic derivation
 // floor -> grounding verification -> cross-source consistency check ->
 // anti-boilerplate rewrite pass for written fields.
@@ -624,6 +640,24 @@ export async function generateAllFields(productName: string, sources: GtmSources
   // (e.g. Motor Type on a non-motorized product) never gets a category-
   // typical guess layered on top of its already-final "N/A".
   applyCategoryDefaults(grounded, pipelineSchema, sources.project.category);
+
+  // positioning_statement is the ONE narrative field whose real grounding
+  // is the user's own Positioning Context input (companyContext) — unlike
+  // expert_tip/reason_to_buy/our_differentiators etc., which can draw on
+  // competitive/TDS/web data, there's nothing else to ground this field in.
+  // Confirmed live: this chunk's AI call can come back empty even with real
+  // companyContext present (the fixed-size FIELDS_PER_CHUNK chunking means a
+  // single slow/failed chunk silently drops every field in it, with no
+  // per-chunk retry) — so rather than leave a real, user-provided
+  // business-rationale answer unused, fall back to assembling it directly
+  // from companyContext (+ keyDiff, if it adds something new) when the AI
+  // tier left this field unresolved.
+  if (!isRealAnswer(grounded.positioning_statement?.answer)) {
+    const fallback = derivePositioningStatementFallback(sources.project.companyContext, sources.project.keyDiff);
+    if (fallback) {
+      grounded.positioning_statement = { answer: fallback, source: "derived", sourceDetail: { label: "Assembled from the project's own Positioning Context" } };
+    }
+  }
 
   await guardWrittenFieldsQuality(grounded, pipelineSchema, sources, productName, projectId, pipelineStart, voiceBlock, preLaunchRule);
 
