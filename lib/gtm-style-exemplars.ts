@@ -3,13 +3,22 @@
 // GTM Product Knowledge documents: Homie Clipper (SC628B), Homie Shaver
 // (SC817B), Homie Shaver Replacement Foil (SC559B), the SC x 360 Jeezy
 // Trimmer (SC423B), the Arbitrage Clipper (SCMD631B), the Saber Trimmer —
-// Orange (SC421O), and the Saber II Clipper — Orange (SC617O). These
-// describe OTHER, already-shipped products — they exist here purely as
-// style/depth/format calibration for the AI generation prompt
-// (lib/gtm-generate.ts's buildSystemInstruction), never as a data source
-// for a NEW product's own facts. See STANDING_ANTI_COPY_WARNING below,
-// which is embedded verbatim in every generation call that includes this
-// corpus.
+// Orange (SC421O), the Saber II Clipper — Orange (SC617O), the Gamma+
+// Boosted One Shaver (GP804B), the GP115B Xceed Dryer, and the 3Versince
+// Trimmer (3VESTRIM). These describe OTHER, already-shipped products — they
+// exist here purely as style/depth/format calibration for the AI generation
+// prompt (lib/gtm-generate.ts's buildSystemInstruction), never as a data
+// source for a NEW product's own facts. See STANDING_ANTI_COPY_WARNING
+// below, which is embedded verbatim in every generation call that includes
+// this corpus.
+//
+// The first 6 are all StyleCraft-brand barber tools (clipper/trimmer/
+// shaver) — the last 3 (added after a team complaint that Lens's output
+// read noticeably weaker than real GTMs they'd compared it against)
+// fill two real gaps that left: zero Gamma+-brand calibration at all, and
+// zero Hair Dryer category calibration at all (dryer products had nothing
+// to draw on but the barber-tool examples above). Pulled directly from the
+// team's own real, in-production Google Sheets GTM docs for those products.
 //
 // Only the style-sensitive fields are included (narrative/claim-format
 // fields) — grounded spec fields (dimensions, warranty text, etc.) don't
@@ -312,6 +321,98 @@ export const GTM_STYLE_EXEMPLARS: GtmExemplar[] = [
         "DO: Lead with barber identity and personal brand story. Hero the orange colorway against dark backgrounds. Use real barbers and real shop environments. Reference the Saber collection (Black, White, Gold, Orange) to position it as a lineup. Reference performance specs when relevant to validate the tool for new buyers. DON'T: Position the orange SKU as secondary or lesser to the original black. Avoid generic \"now available in a new color\" messaging. Don't show it in domestic or home bathroom settings. Don't lead with specs alone. Emotion and identity come first.",
       marketing_web_coverage:
         "PDP page (Amazon, DTC/Brand.com, Walmart) — hero images, A+ content module, feature bullet copy. Brand storefront update on Amazon and Walmart.",
+    },
+  },
+  {
+    productName: "Gamma+ Boosted One Shaver",
+    sku: "GP804B",
+    tier: "flagship",
+    excerpts: {
+      positioning_statement:
+        "The Gamma+ Boosted One Shaver is the precision-focused tool in the Boosted lineup, delivering the same Super Torque Motor power through a single gold titanium foil built for detail work, line clean-up, and sensitive skin. Where the Double Foil covers ground, the Boosted One goes deeper into the detail.",
+      features_full_list:
+        "SUPER-TORQUE MOTOR runs at up to 9,000 RPM.\nINTERCHANGEABLE THUMB GRIPS for a customizable and comfortable grip.",
+      marketing_primary_goal:
+        "Drive trial and awareness of the Boosted One Shaver among professional barbers and grooming-focused retail consumers; support retailer sell-in with a strong product story and visual assets. Initial launch quantity sold did we sell out? Is the #1 early demand signal.",
+      marketing_success_kpis:
+        "Revenue against sell-in targets. Retail sell-through rate (units/week). ROAS on paid social/search. New-to-brand buyers. PDP conversion rate on DTC and Amazon. Engagement rate on launch content. First-30-day sell-through is the lead metric. Sold out at launch is the headline win.",
+      marketing_launch_timing:
+        "Marketing kicks off 4–6 weeks prior to in-market date. Tease phase 2 weeks before, full launch push on in-market date. Align with trade show calendar if timing allows.",
+      marketing_core_audience:
+        "Professional barbers and stylists (ages 22-45) who prioritize precision detailing, line work, and clean shaves on clients. High-volume daily workers who value tools that reduce hand fatigue. Also targets grooming-conscious men (ages 18-40) who want a comfortable, travel-friendly shaver for personal use.",
+      marketing_secondary_audience:
+        "At-home groomers and style-conscious men (ages 18-35) who want a powerful, easy-to-use single foil shaver for personal grooming, travel, or maintaining lines between barber visits. Stylists are also a secondary audience.",
+      marketing_consumer_barrier:
+        "Consumers may not understand single vs. double foil. Marketing must answer 'Why this vs. the Boosted Double?' head-on, don't make people do the math, show them the difference. Precision, control in tight areas, how to take out lines put in by a shaver, and sensitivity for skin are the core answers.",
+    },
+  },
+  {
+    // The only Hair Dryer exemplar in this corpus — previously that
+    // category had zero style calibration at all (every exemplar above is
+    // a barber cutting/shaving tool), so a dryer's narrative fields had
+    // nothing real to draw depth/format from.
+    productName: "GAMMA+ Xceed Advanced Professional Hair Dryer",
+    sku: "GP115B",
+    tier: "flagship",
+    excerpts: {
+      why_creating_item:
+        "Partnership with Gamma Più (Italy) brings their flagship light-technology dryer into the GAMMA+ beauty range. It extends the Xceed collection out of barber and into beauty, giving the line a complete professional station across cutting, finishing, and drying. It also gives us a true BEST tier dryer with a differentiator no competitor in the segment carries: three light-based technologies in one tool.",
+      positioning_statement:
+        "A professional dryer for those who refuse to compromise on performance. The Xceed is a next-generation styling tool built for speed, power, and precision. Unlike other dryers, Xceed leverages OxyRay Trio Light Technology, delivering accelerated drying, less frizz, and enhanced shine so professionals work faster and see superior results with every service.",
+      product_name_origin:
+        "Xceed reads as \"exceed.\" The tool is built to exceed expectations of what a professional dryer can deliver, and the name feeds directly into the tagline, Xceed Expectations.",
+      name_story_tie:
+        "Every claim in the story is a version of exceeding a limit: exceeding standard ionic output with three light technologies, exceeding standard drying speed with a brushless motor, exceeding the setting range of a typical pro dryer with 12 combinations. The name is the promise and the feature set is the proof.",
+      features_full_list:
+        "OXYRAY TRIO LIGHT TECHNOLOGY. Infrared delivers deep, even heat that speeds drying from within; active oxygen seals the cuticle for a smoother strand; ionic output cuts frizz and locks in shine. Run each mode alone or stack all three for a complete finish.\nHIGH-EFFICIENCY DIGITAL BRUSHLESS MOTOR. Ultra-concentrated, high-pressure airflow noticeably cuts drying time versus a standard motor, with less heat stress built for back-to-back services.\n12 HEAT & SPEED COMBINATIONS. A clean LED interface puts every combination at your fingertips, from fine and color-treated to dense and coarse.",
+      marketing_primary_goal:
+        "Drive retailer sell-in and professional trial. Revenue is the primary measure at the $249.95 salon price. Secondary goal is carrying the Xceed collection from barber into beauty and building GAMMA+ authority with stylists, where the brand is less established than it is behind the barber chair.",
+      marketing_success_kpis:
+        "Revenue vs forecast, units sold split salon vs retail, SPIFF redemption rate (DSC and store), creator content engagement rate, Amazon and Walmart PDP conversion rate, pre-order volume.",
+      marketing_launch_timing:
+        "In-market October 1. Marketing should kick off six to eight weeks ahead for creator seeding, pre-order capture, and PDP readiness.",
+      marketing_core_audience:
+        "Licensed professional stylists working in salons, suites, and specialty beauty environments. Career-focused, technically fluent, mid to senior level. Values performance tools that protect client hair health, reduce hand fatigue, and elevate service results. Often already invested in quality cutting tools, and the dryer is the next upgrade to the kit.",
+      marketing_secondary_audience:
+        "Advanced prosumer who invests in professional-grade tools, follows stylists and beauty creators on social, and is motivated by visible results (shine, frizz control, hair health) more than specifications. Drawn to the aspirational quality of a salon-level tool.",
+    },
+  },
+  {
+    // Partnership/co-branded product where the differentiator is a THIRD
+    // PARTY'S named component (the 3Versince ES5 blade), not a StyleCraft-
+    // invented technology — distinct pattern from the Arbitrage/360 Jeezy
+    // exemplars above, where StyleCraft itself is the sole namer. Also the
+    // one exemplar where new_technology is a real, legitimate "No" (reused
+    // platform motor) rather than a new-tech claim — not every real GTM
+    // leads with something new, and the AI should not feel pressured to
+    // invent a technology angle when there genuinely isn't one.
+    productName: "3Versince X S|C Pro Trimmer",
+    sku: "3VESTRIM",
+    tier: "flagship",
+    excerpts: {
+      why_creating_item:
+        "Pro barbers broadly want a trimmer that's sharp and ready to go the moment they open the box, a true hitter out of the box. This is that answer for any barber who loves a sharp blade, not only barbers who already know 3Versince.",
+      positioning_statement:
+        "Barbers want the same thing out of the box: a blade that's already sharp, no breaking in required. The 3Versince X S|C Pro Trimmer delivers exactly that: our first trimmer to ship with a hand-modified blade already assembled out of the box, built through our official partnership with 3Versince.",
+      product_name_origin:
+        "3Versince is the established blade brand behind the ES5, known in the barber community for hand-sharpened, diamond-lapped modified blades. The product name carries that blade brand directly into the trimmer itself, signaling this is a genuine 3Versince partnership.",
+      name_story_tie:
+        "Naming the trimmer after the blade brand signals a genuine partnership to barbers who already know 3Versince, while the core promise, sharp and ready straight out of the box, is what draws in barbers who don't know the brand yet.",
+      new_technology: "No. This is the same Super Torque Motor that is in the Flex trimmer.",
+      features_full_list:
+        "3Versince ES5 blade, hand-sharpened, diamond-lapped, and already installed.\nSuper Torque motor delivering up to 7,500 RPM for fast bulk removal.\nZero-gap ready out of the box, no setup or break-in required.",
+      marketing_primary_goal:
+        "Drive trial among two overlapping groups: barbers who already use the 3Versince ES5 blade as an upgrade, and the broader pool of pro barbers hunting for a \"hitter,\" a trimmer that is sharp and ready to go the moment it is unboxed, no separate blade purchase or setup needed.",
+      marketing_success_kpis:
+        "Sold out at launch (primary 30-day demand signal), sell-through velocity, pro barber UGC/engagement, retailer sell-in.",
+      marketing_launch_timing:
+        "Launch date is November 1, 2026. Marketing should kick off 4-6 weeks prior with barber seeding and teaser content, building to a full push at launch.",
+      marketing_core_audience:
+        "Pro barbers broadly who want a trimmer that's sharp and ready to go straight out of the box, no separate blade purchase or setup. This includes, but isn't limited to, barbers who already know and trust the 3Versince ES5 blade.",
+      marketing_secondary_audience:
+        "Broader pro and serious enthusiast crossover already familiar with the Flex Trimmer platform.",
+      marketing_consumer_barrier:
+        "Barbers want a trimmer that performs like a sharp \"hitter\" from the first use, without having to buy and install an aftermarket blade separately. For barbers who already use the 3Versince ES5 blade, the barrier is the extra purchase/install step.",
     },
   },
 ];
