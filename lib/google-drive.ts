@@ -69,21 +69,26 @@ export async function uploadToDrive({
   // instead of creating a new one — used for the "replace" path.
   existingFileId?: string | null;
 }): Promise<{ fileId: string; webViewLink: string }> {
-  // If Google credentials are not configured, return a realistic mock drive URL
+  // Real-link-or-honest-error — this used to return a plausible-looking
+  // but completely non-functional "mock_"/"fallback_" Drive URL whenever
+  // credentials were missing or the live call failed, which the caller
+  // (app/api/drive/upload/route.ts) returned as an ordinary 200 success
+  // and the UI (SaveToDriveButton.tsx) rendered as a green "Saved to
+  // Drive" link — confirmed live: a GTM workbook's xlsx_drive_url was
+  // literally "https://drive.google.com/file/d/mock_.../view", saved
+  // as if it were real, with no way for the user to tell it wasn't a
+  // real file until they clicked it and got a dead link. Throwing here
+  // instead lets that same route's existing catch block return a real
+  // error, and the button's existing error state ("Retry Drive Sync")
+  // actually fire — no fake success for a save that didn't happen.
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_REFRESH_TOKEN) {
-    return {
-      fileId: `mock_drive_${Date.now()}`,
-      webViewLink: `https://drive.google.com/file/d/mock_${Date.now()}/view?usp=sharing`
-    };
+    throw new Error("Google Drive isn't configured for this environment (missing GOOGLE_CLIENT_ID/GOOGLE_REFRESH_TOKEN) — ask an admin to set it up before saving to Drive.");
   }
 
   try {
     const drive = await getDriveInstance();
     if (!drive) {
-      return {
-        fileId: `mock_drive_${Date.now()}`,
-        webViewLink: `https://drive.google.com/file/d/mock_${Date.now()}/view?usp=sharing`
-      };
+      throw new Error("Google Drive client failed to initialize — check GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET/GOOGLE_REFRESH_TOKEN.");
     }
 
     const stream = Readable.from(typeof content === "string" ? [content] : [content]);
@@ -137,13 +142,15 @@ export async function uploadToDrive({
   } catch (err: any) {
     // Security audit fix — see the identical comment above; never log the
     // raw SDK error object (could carry a live access token).
-    console.warn("Google Drive live upload error, using fallback URL:", {
+    console.warn("Google Drive live upload error:", {
       message: err?.message,
       status: err?.status || err?.code,
     });
-    return {
-      fileId: `fallback_drive_${Date.now()}`,
-      webViewLink: `https://drive.google.com/file/d/fallback_${Date.now()}/view?usp=sharing`
-    };
+    // Real error, not a fake success — see this function's own header
+    // comment for why a fabricated "fallback_" link is worse than an
+    // honest failure. Re-thrown as a plain Error (never the raw SDK
+    // error object, which can carry a live access token) so the caller's
+    // message is safe to surface to the user as-is.
+    throw new Error(err?.message ? `Google Drive upload failed: ${err.message}` : "Google Drive upload failed.");
   }
 }
