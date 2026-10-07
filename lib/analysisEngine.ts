@@ -3072,7 +3072,16 @@ export async function runAnalysisStep(analysisId: string): Promise<AnalysisStepR
         };
         const trialSelection = selectByCompositeScore(pool, targetPriceRaw, "emerging", identityCard, 5, trialCtx, { allowStaticFallbackTopup: false, requireMotorEvidenceFirst: true });
 
-        if (trialSelection.length < 5 && updatedFill.round < 3) {
+        // Capped at 2 rounds (not 3) — speed/thoroughness tradeoff: a 3rd
+        // full discovery round costs another 20-46s AI web-search call per
+        // slot still open, and 2b's own nearest-similar rescan (below) plus
+        // round 4's last-resort re-query already exist as cheaper backstops
+        // for whatever's still missing after 2 rounds. Phase 1's identical
+        // fill loop (same pattern, ~line 2860) is untouched — this cap is
+        // Phase 2 (emerging competitors) only, confirmed slow in production
+        // (one real analysis needed 2 full rounds + was entering a 3rd,
+        // 20 searches and ~8.5 minutes deep, before even reaching 2b).
+        if (trialSelection.length < 5 && updatedFill.round < 2) {
           await updateAnalysisPhase(analysisId, 2, "phase2_result", {
             __phase2Fill: { round: (updatedFill.round + 1) as 1 | 2 | 3, searchesSoFar: updatedFill.searchesSoFar },
             __phase2Pool: pool,
