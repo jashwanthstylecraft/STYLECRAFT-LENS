@@ -365,8 +365,10 @@ export const GTM_FIELD_SCHEMA: GtmField[] = [
   // evidence either is actually beauty-specific (the Barber template may
   // simply not have been scanned on a row that happened to include them) —
   // revisit if the Barber template turns out to genuinely lack these.
-  field("distributed_by", "General", "Distributed By", { legacyOptional: true }),
-  field("collection", "General", "Collection", { legacyOptional: true }),
+  // Not legacyOptional: real fields the team wants visible/fillable on
+  // every project, not edge cases that should stay hidden until answered.
+  field("distributed_by", "General", "Distributed By"),
+  field("collection", "General", "Collection"),
 
   // Packaging & Logistics
   field("dieline", "Packaging & Logistics", "Dieline", { legacyOptional: true }),
@@ -492,14 +494,14 @@ export const GTM_FIELD_SCHEMA: GtmField[] = [
   // the web-listing-facing attachment count, and the template separates
   // them structurally; merge them later if they turn out to always be the
   // same number in practice.
-  field("comb_attachments_count", "Guards", "# Comb Attachments", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
+  field("comb_attachments_count", "Guards", "# Comb Attachments", { family: "clipper_trimmer_shaver" }),
 
   // Charging — real barber template section; absent from beauty (beauty's
   // own electrical facts live under Electrical & Power above instead).
   // "Charging Base" (whether one ships at all) is a new field found in the
   // Oct 2026 Barber template — distinct from charging_base_color below
   // (which only answers what color it is, not whether it exists).
-  field("charging_base", "Charging", "Charging Base", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
+  field("charging_base", "Charging", "Charging Base", { family: "clipper_trimmer_shaver" }),
   field("charging_light_color", "Charging", "Light Color", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
   field("charging_base_color", "Charging", "Base Color", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
   field("charging_cord_color", "Charging", "Cord Color", { legacyOptional: true, family: "clipper_trimmer_shaver" }),
@@ -611,10 +613,10 @@ export const GTM_FIELD_SCHEMA: GtmField[] = [
   // templates against the in-app schema (label inspection on upload).
   // engineer_approved appeared in BOTH templates' BOX ONLY sheet, no
   // family restriction; the other 3 so far only confirmed in Beauty's.
-  field("engineer_approved", "Box Only", "Engineer Approved", { legacyOptional: true }),
-  field("box_made_in", "Box Only", "Made In", { legacyOptional: true }),
-  field("box_social_handles", "Box Only", "Social Handles", { legacyOptional: true }),
-  field("box_copyright_year", "Box Only", "Copyright Year", { legacyOptional: true }),
+  field("engineer_approved", "Box Only", "Engineer Approved"),
+  field("box_made_in", "Box Only", "Made In"),
+  field("box_social_handles", "Box Only", "Social Handles"),
+  field("box_copyright_year", "Box Only", "Copyright Year"),
 ];
 
 export const GTM_SECTIONS = Array.from(new Set(GTM_FIELD_SCHEMA.map(f => f.section)));
