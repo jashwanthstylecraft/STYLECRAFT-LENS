@@ -67,7 +67,18 @@ async function main() {
   const beautyVisible = visibleGtmSchema(GTM_FIELD_SCHEMA, {}, "beauty");
   assert(barberVisible.some(f => f.id === "blade_name") && !barberVisible.some(f => f.id === "barrel_material"), "visibleGtmSchema hides beauty-only fields for a barber-family product");
   assert(beautyVisible.some(f => f.id === "barrel_material") && !beautyVisible.some(f => f.id === "blade_name"), "visibleGtmSchema hides barber-only fields for a beauty-family product");
-  assert(barberVisible.some(f => f.id === "lids_qty") && beautyVisible.some(f => f.id === "lids_qty"), "the shared Lids/Customizable Parts fields stay visible for both families");
+  // lids_qty is legacyOptional (manual-fill-only — hidden until it has a
+  // real answer, same as every other legacyOptional field), so an empty
+  // fields map hides it for BOTH families regardless of the family gate
+  // this test actually cares about — that's visibleGtmSchema's documented
+  // legacyOptional behavior, not a family-gating bug. Supplying a real
+  // answer isolates what this assertion is actually testing: that the
+  // family gate itself doesn't ALSO exclude this shared (non-family-
+  // tagged) field once it's actually filled in.
+  const withLidsAnswered = { lids_qty: { answer: "2" } };
+  const barberVisibleWithLids = visibleGtmSchema(GTM_FIELD_SCHEMA, withLidsAnswered, "clipper_trimmer_shaver");
+  const beautyVisibleWithLids = visibleGtmSchema(GTM_FIELD_SCHEMA, withLidsAnswered, "beauty");
+  assert(barberVisibleWithLids.some(f => f.id === "lids_qty") && beautyVisibleWithLids.some(f => f.id === "lids_qty"), "the shared Lids/Customizable Parts fields stay visible for both families once answered");
   const nonLegacyOptionalCount = GTM_FIELD_SCHEMA.filter(f => !f.legacyOptional).length;
   assert(visibleGtmSchema(GTM_FIELD_SCHEMA, {}).length === nonLegacyOptionalCount, "omitting resolvedFamily applies only the pre-existing legacyOptional filter — unchanged pre-multi-template behavior");
 
