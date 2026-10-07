@@ -252,6 +252,38 @@ export function inferHairType(sourcedText: string): DerivedAnswer | null {
   return null;
 }
 
+// hair_type fallback when inferHairType above found no literal keyword —
+// per explicit request, reasons from motor type/RPM/product category
+// instead of leaving the field empty. Scoped to clipper/trimmer/shaver
+// (the "cuts hair" tool family) — a hair dryer's motor drives airflow,
+// not a blade, so "cuts through thick hair" reasoning doesn't transfer
+// (those categories already have their own Tier 7 category default, see
+// lib/category-defaults.ts). Clippers/trimmers/shavers are near-
+// universally marketed as usable across all hair types; a confirmed
+// high-torque/high-RPM motor additionally and specifically supports
+// thick/coarse/dense hair (the exact scenario a weaker motor bogs down
+// on) — that's reflected in the citation, not a different categorical
+// answer, since anything narrower than "All Hair Types" would need an
+// explicit product claim, which inferHairType above already catches.
+const MOTOR_CUTTING_TOOL_TYPES = new Set(["clipper", "trimmer", "shaver"]);
+const HIGH_TORQUE_MOTOR_KEYWORDS = ["vector motor", "magnetic motor", "digital brushless", "torque control", "high torque", "high-torque"];
+const HIGH_PERFORMANCE_RPM_THRESHOLD = 7500;
+
+export function inferHairTypeFromMotor(
+  ourToolType: string | null | undefined,
+  ourMotorLabel: string | null | undefined,
+  ourRpm: number | null
+): DerivedAnswer | null {
+  if (!ourToolType || !MOTOR_CUTTING_TOOL_TYPES.has(ourToolType)) return null;
+  const motorLower = (ourMotorLabel || "").toLowerCase();
+  const highTorqueSignal = HIGH_TORQUE_MOTOR_KEYWORDS.some(k => motorLower.includes(k)) || (ourRpm != null && ourRpm >= HIGH_PERFORMANCE_RPM_THRESHOLD);
+  if (highTorqueSignal) {
+    const motorPart = ourMotorLabel ? `${ourMotorLabel}${ourRpm ? ` (${ourRpm}rpm)` : ""}` : `${ourRpm}rpm motor`;
+    return { answer: `All Hair Types — ${motorPart} is engineered for thick/coarse/dense hair without stalling`, source: "derived" };
+  }
+  return { answer: "All Hair Types — typical for a professional grooming tool in this category", source: "derived" };
+}
+
 // Applied deliberately AFTER the web-search fallback tier in the caller's
 // pipeline (lib/gtm-generate.ts) — these are pure computed inferences, not
 // direct source copies, so they must never preempt a real web search result.
@@ -355,7 +387,8 @@ export function applyTier6Inference(
     if (derived) fields["motor_noise_level"] = derived;
   }
   if (schema.some(f => f.id === "hair_type") && isUnresolved(fields, "hair_type")) {
-    const derived = inferHairType(input.hairTypeSourceText);
+    const derived = inferHairType(input.hairTypeSourceText)
+      ?? inferHairTypeFromMotor(input.catalogLineup?.ourToolType, input.performance?.ourMotorLabel, input.performance?.ourRpm ?? null);
     if (derived) fields["hair_type"] = derived;
   }
   if (schema.some(f => f.id === "manufacturer") && isUnresolved(fields, "manufacturer") && input.manufacturer) {

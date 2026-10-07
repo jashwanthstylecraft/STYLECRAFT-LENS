@@ -211,11 +211,24 @@ async function resolveCatalogProductKind(sources: GtmSources): Promise<{ product
 // Text blob for lib/gtm-tier6-inference.ts's keyword-based hair_type
 // inference — every source that could plausibly mention hair type in
 // prose, not the structured spec fields already covered by gtm-derive.ts.
-export function buildHairTypeSourceText(sources: GtmSources): string {
+// `resolvedAnswers` (optional) folds in this SAME generation pass's own
+// already-resolved marketing-copy fields (Reason to Buy/Differentiators/
+// Expert Tip) — real AI/web-sourced prose that, for a professional
+// grooming tool, often already states hair-type/usage capability
+// ("cuts through thick, coarse hair") even when TDS/Sales Kit (this
+// function's older, narrower sources) have nothing. Tier 6 runs after
+// those fields resolve, so callers pass their own already-resolved map.
+const HAIR_TYPE_FEATURE_FIELD_IDS = ["reason_to_buy", "our_differentiators", "expert_tip"];
+
+export function buildHairTypeSourceText(sources: GtmSources, resolvedAnswers?: Record<string, string | null | undefined>): string {
+  const featureText = HAIR_TYPE_FEATURE_FIELD_IDS.map(id => resolvedAnswers?.[id]).filter(Boolean).join(" ");
   return [
     sources.tds?.product_description,
     (sources.salesKit?.key_features || []).map((f: any) => f.headline).filter(Boolean).join(" "),
     sources.project.category,
+    sources.project.description,
+    sources.project.keyDiff,
+    featureText,
   ].filter(Boolean).join(" ");
 }
 
@@ -602,8 +615,9 @@ export async function generateAllFields(productName: string, sources: GtmSources
   // but must never preempt a real web search result the way an eager
   // pre-AI derivation would (see lib/gtm-tier6-inference.ts).
   const tier6Extra = await buildTier6ExtraInputs(sources, toolTypes);
+  const resolvedAnswersForHairType = Object.fromEntries(Object.entries(grounded).map(([id, f]) => [id, f.answer]));
   applyTier6Inference(grounded, pipelineSchema, {
-    hairTypeSourceText: buildHairTypeSourceText(sources),
+    hairTypeSourceText: buildHairTypeSourceText(sources, resolvedAnswersForHairType),
     ...tier6Extra,
   });
 
@@ -775,7 +789,7 @@ export async function generateSingleField(fieldId: string, sources: GtmSources, 
   );
   const tier6Extra = await buildTier6ExtraInputs(sources, toolTypes);
   applyTier6Inference(guarded, [schemaField], {
-    hairTypeSourceText: buildHairTypeSourceText(sources),
+    hairTypeSourceText: buildHairTypeSourceText(sources, sources.existingFieldAnswers || undefined),
     ...tier6Extra,
   });
   // Same independence as generateAllFields' Tier 6.5 block above — at most

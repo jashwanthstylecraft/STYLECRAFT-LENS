@@ -33,18 +33,29 @@ const CATEGORY_DEFAULTS: [string, CategoryDefaults][] = [
     certification_needed: "CE, RoHS",
     rating_label: "Manufacturer rating label typically lists voltage, wattage, and applicable safety certification marks",
     care_directions: "Oil the blades after each use, clear off hair/debris with the included brush, and avoid full submersion in water unless the product is labeled waterproof.",
+    // Was previously missing here (present for dryer/styling/brush below)
+    // with no stated reason — a professional clipper is just as
+    // universally marketed as usable across hair types as those
+    // categories, so the omission left hair_type permanently empty for
+    // this app's single largest product family. See
+    // lib/gtm-tier6-inference.ts's inferHairTypeFromMotor for the more
+    // specific, motor/RPM-cited version of this same answer that Tier 6
+    // tries first — this is only the Tier 7 safety net.
+    hair_type: "All Hair Types",
     material: "ABS plastic housing with stainless steel blades",
   }],
   ["trimmer", {
     certification_needed: "CE, RoHS",
     rating_label: "Manufacturer rating label typically lists voltage, wattage, and applicable safety certification marks",
     care_directions: "Oil the blades after each use, clear off hair/debris with the included brush, and avoid full submersion in water unless the product is labeled waterproof.",
+    hair_type: "All Hair Types",
     material: "ABS plastic housing with stainless steel blades",
   }],
   ["shaver", {
     certification_needed: "CE, RoHS",
     rating_label: "Manufacturer rating label typically lists voltage, wattage, and applicable safety certification marks",
     care_directions: "Clean the foil/blade after each use and avoid full submersion in water unless the product is labeled waterproof.",
+    hair_type: "All Hair Types",
     material: "ABS plastic housing with a stainless steel foil/blade",
   }],
   ["hair dryer", {

@@ -185,7 +185,8 @@ export async function refillGtmFromSources(projectId: string, orgId: string, use
 
     const toolTypes = await listToolTypes();
     const tier6Extra = await buildTier6ExtraInputs(sources, toolTypes);
-    applyTier6Inference(pass0Fields, GTM_FIELD_SCHEMA, { hairTypeSourceText: buildHairTypeSourceText(sources), ...tier6Extra });
+    const resolvedAnswersForHairType = Object.fromEntries(Object.entries(pass0Fields).map(([id, f]) => [id, f.answer]));
+    applyTier6Inference(pass0Fields, GTM_FIELD_SCHEMA, { hairTypeSourceText: buildHairTypeSourceText(sources, resolvedAnswersForHairType), ...tier6Extra });
     await applyFeaturesAndExpertTip(pass0Fields, GTM_FIELD_SCHEMA, sources, project.productName, routeStartTime, voiceBlock, tdsGroundingBlock, matchedCatalogProduct?.description ?? null);
     await applyCollectionKernelAdaptation(pass0Fields, GTM_FIELD_SCHEMA, project.productName, matchedCatalogProduct?.collection ?? null, voiceBlock, tdsGroundingBlock);
     await applyCoreConsumerBothNote(pass0Fields, GTM_FIELD_SCHEMA, project.productName, voiceBlock, tdsGroundingBlock);
