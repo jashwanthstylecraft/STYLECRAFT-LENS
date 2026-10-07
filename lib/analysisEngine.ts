@@ -1081,6 +1081,20 @@ export function filterCandidatesByCategoryAndIdentity(competitors: any[], defaul
     return name.toLowerCase().includes(ownProductNameLower);
   }
 
+  // A real competitor is never the SAME manufacturer as the product under
+  // analysis — confirmed live: a StyleCraft product's own analysis surfaced
+  // another real StyleCraft SKU (a different name entirely, so
+  // isNamedAfterOwnProduct above never catches it) as an "emerging
+  // competitor," wasting a slot that should have gone to a genuine rival
+  // brand. identity.brand comes from Phase 0's own product identification,
+  // so this applies to every analysis regardless of manufacturer, not just
+  // StyleCraft/Gamma+ specifically.
+  const ownBrandToken = identity.brand ? normalizeBrandToken(identity.brand) : "";
+  function isOwnBrand(brand: string): boolean {
+    if (!ownBrandToken || !brand) return false;
+    return normalizeBrandToken(brand) === ownBrandToken;
+  }
+
   for (const rawIncoming of incomingList) {
     if (cleaned.length >= POOL_CAP) break;
     if (!rawIncoming || !rawIncoming.name) continue;
@@ -1104,6 +1118,7 @@ export function filterCandidatesByCategoryAndIdentity(competitors: any[], defaul
       continue;
     }
     if (isNamedAfterOwnProduct(rawIncoming.name || "")) continue;
+    if (isOwnBrand(rawIncoming.brand || "")) continue;
 
     let asin = rawIncoming.asin || "";
     let amazonUrl = rawIncoming.amazon_url || "";
