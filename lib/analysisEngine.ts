@@ -1055,6 +1055,20 @@ function getCategoryFallbackCompetitors(identity: IdentityCard, defaultTier: "le
 // text doesn't match the identified category (lib/category-synonyms.ts) —
 // a clipper can never survive into a hair-dryer analysis, even if the AI
 // itself proposed one.
+// A real competitor is never the SAME manufacturer as the product under
+// analysis — confirmed live: a StyleCraft product's own analysis surfaced
+// another real StyleCraft SKU as an "emerging competitor." Shared by every
+// candidate-admission site in this file (the main AI-discovery filter below
+// AND both static-fallback-topup loops inside selectByCompositeScore —
+// the topup loops inject curated dataset entries directly into `final`,
+// bypassing filterCandidatesByCategoryAndIdentity entirely, so they need
+// their own call to this, not just a comment pointing at the other one).
+export function isOwnBrandCandidate(identity: Pick<IdentityCard, "brand">, candidateBrand: string | null | undefined): boolean {
+  const ownBrandToken = identity.brand ? normalizeBrandToken(identity.brand) : "";
+  if (!ownBrandToken || !candidateBrand) return false;
+  return normalizeBrandToken(candidateBrand) === ownBrandToken;
+}
+
 // STAGE A — category/self-name/ASIN-placeholder filtering only. No price
 // awareness, no truncation to a fixed count: runs on whatever the AI/live
 // search actually returned (up to 8 per the bumped prompt count), producing
@@ -1081,19 +1095,6 @@ export function filterCandidatesByCategoryAndIdentity(competitors: any[], defaul
     return name.toLowerCase().includes(ownProductNameLower);
   }
 
-  // A real competitor is never the SAME manufacturer as the product under
-  // analysis — confirmed live: a StyleCraft product's own analysis surfaced
-  // another real StyleCraft SKU (a different name entirely, so
-  // isNamedAfterOwnProduct above never catches it) as an "emerging
-  // competitor," wasting a slot that should have gone to a genuine rival
-  // brand. identity.brand comes from Phase 0's own product identification,
-  // so this applies to every analysis regardless of manufacturer, not just
-  // StyleCraft/Gamma+ specifically.
-  const ownBrandToken = identity.brand ? normalizeBrandToken(identity.brand) : "";
-  function isOwnBrand(brand: string): boolean {
-    if (!ownBrandToken || !brand) return false;
-    return normalizeBrandToken(brand) === ownBrandToken;
-  }
 
   for (const rawIncoming of incomingList) {
     if (cleaned.length >= POOL_CAP) break;
@@ -1118,7 +1119,7 @@ export function filterCandidatesByCategoryAndIdentity(competitors: any[], defaul
       continue;
     }
     if (isNamedAfterOwnProduct(rawIncoming.name || "")) continue;
-    if (isOwnBrand(rawIncoming.brand || "")) continue;
+    if (isOwnBrandCandidate(identity, rawIncoming.brand)) continue;
 
     let asin = rawIncoming.asin || "";
     let amazonUrl = rawIncoming.amazon_url || "";
@@ -1262,6 +1263,7 @@ export function applyPriceBandGate(
         console.warn(`[tool-type] rejected fallback candidate "${fb.name}" — mismatched tool type for ${identity.toolType}`);
         continue;
       }
+      if (isOwnBrandCandidate(identity, fb.brand)) continue;
 
       usedNames.add((fb.name || "").toLowerCase());
       const outOfBand = !isWithinBand(fbPrice, primaryBand);
@@ -1379,7 +1381,7 @@ export function selectByCompositeScore(
   identity: IdentityCard,
   limit: number,
   ctx: CompositeScoringContext,
-  opts: { allowStaticFallbackTopup?: boolean; requireMotorEvidenceFirst?: boolean; nearestSimilarMode?: boolean } = {}
+  opts: { allowStaticFallbackTopup?: boolean; requireMotorEvidenceFirst?: boolean; nearestSimilarMode?: boolean; unboundedPriceMode?: boolean } = {}
 ): any[] {
   const allowStaticFallbackTopup = opts.allowStaticFallbackTopup ?? true;
   const withPrice = candidates.map(c => ({
@@ -1435,7 +1437,17 @@ export function selectByCompositeScore(
     // industry gate is NEVER relaxed here — `gated`, not `withPrice`, is
     // still the source pool, per the ticket's explicit "better an honest
     // empty than a nearest-similar gate bypass" rule.
-    accepted = gated.filter(c => c._resolvedPrice != null && c._resolvedPrice >= targetPriceRaw * 0.4 && c._resolvedPrice <= targetPriceRaw * 2.5);
+    //
+    // unboundedPriceMode (opts.unboundedPriceMode) drops the 40%-250% floor/
+    // ceiling entirely, requiring only a real resolved price — the true
+    // last-resort rung, only reached when even THIS band still couldn't
+    // fill every slot (see the finalize blocks' extra pass below this
+    // function's own call sites). Still never relaxes the industry gate or
+    // category/tool-type/own-brand checks above — "no empty slot" is
+    // satisfied with a real, correctly-typed, honestly-labeled product
+    // (nearest_match_reason below always states the price gap), never a
+    // fabricated one.
+    accepted = gated.filter(c => c._resolvedPrice != null && (opts.unboundedPriceMode || (c._resolvedPrice >= targetPriceRaw * 0.4 && c._resolvedPrice <= targetPriceRaw * 2.5)));
   } else {
     for (let widenStep = 0; widenStep <= 2; widenStep++) {
       const band = computePriceBand(targetPriceRaw, tier, widenStep);
@@ -1688,7 +1700,10 @@ export function selectByCompositeScore(
       if (final.length >= limit) break;
       if (usedNames.has((fb.name || "").toLowerCase())) continue;
       const fbPrice = parsePriceToNumber(fb.price);
-      if (fbPrice == null || !isWithinBand(fbPrice, widestBand)) continue;
+      // unboundedPriceMode (the true last-resort rung — see the matching
+      // comment on the nearestSimilarMode band above) still requires a real
+      // resolved price, just not one within widestBand.
+      if (fbPrice == null || (!opts.unboundedPriceMode && !isWithinBand(fbPrice, widestBand))) continue;
       // Defense-in-depth: getCategoryFallbackCompetitors is already keyed
       // strictly on identity.toolType (its own header comment), so this
       // should never actually fire — but this loop is the exact spot the
@@ -1723,6 +1738,7 @@ export function selectByCompositeScore(
         console.warn(`[grooming-gate] rejected fallback candidate "${fb.name}" — ${fbGateResult.reason}`);
         continue;
       }
+      if (isOwnBrandCandidate(identity, fb.brand)) continue;
 
       usedNames.add((fb.name || "").toLowerCase());
       const outOfBand = !isWithinBand(fbPrice, primaryBand);
@@ -2925,8 +2941,20 @@ export async function runAnalysisStep(analysisId: string): Promise<AnalysisStepR
         // filtering on the way in, and excludeAlreadySelected keeps this
         // from duplicating an already-seated pick.
         const unusedPool = excludeAlreadySelected(pool, competitors);
-        const nearestPicks = selectByCompositeScore(unusedPool, targetPriceRaw, "legacy", identityCard, stillShort, scoringCtx, { nearestSimilarMode: true, allowStaticFallbackTopup: false });
+        const nearestPicks = selectByCompositeScore(unusedPool, targetPriceRaw, "legacy", identityCard, stillShort, scoringCtx, { nearestSimilarMode: true, allowStaticFallbackTopup: true });
         competitors = [...competitors, ...nearestPicks];
+        stillShort = 5 - competitors.length;
+      }
+      if (stillShort > 0) {
+        // True last resort — same reasoning as Phase 2's own finalize block
+        // (see its comment there): one final honest pass with no price
+        // ceiling/floor at all, still real/correctly-typed/non-own-brand,
+        // nearest_match_reason always states the price gap. Only an honest
+        // empty slot remains if even this can't find enough real distinct
+        // products.
+        const unusedPool2 = excludeAlreadySelected(pool, competitors);
+        const lastResortPicks = selectByCompositeScore(unusedPool2, targetPriceRaw, "legacy", identityCard, stillShort, scoringCtx, { nearestSimilarMode: true, allowStaticFallbackTopup: true, unboundedPriceMode: true });
+        competitors = [...competitors, ...lastResortPicks];
         stillShort = 5 - competitors.length;
       }
       for (let i = 0; i < stillShort; i++) {
@@ -3239,7 +3267,7 @@ export async function runAnalysisStep(analysisId: string): Promise<AnalysisStepR
         // received tool-type-filtered, non-registry-brand candidates on
         // the way in during Phase 2a).
         const unusedPool = excludeAlreadySelected(enrichedPool, result.competitors);
-        const nearestPicks = selectByCompositeScore(unusedPool, targetPriceRaw, "emerging", identityCard, stillShortEmerging, scoringCtx, { nearestSimilarMode: true, allowStaticFallbackTopup: false });
+        const nearestPicks = selectByCompositeScore(unusedPool, targetPriceRaw, "emerging", identityCard, stillShortEmerging, scoringCtx, { nearestSimilarMode: true, allowStaticFallbackTopup: true });
         result.competitors = [...result.competitors, ...nearestPicks];
         stillShortEmerging = 5 - result.competitors.length;
       }
@@ -3267,6 +3295,26 @@ export async function runAnalysisStep(analysisId: string): Promise<AnalysisStepR
           __phase2LineupsCache: Object.fromEntries(indieLineups),
         }, webSearchCount);
         return { analysisId, phase: 2, status: "running", stepResult: null, totalSearches: webSearchCount };
+      }
+
+      if (stillShortEmerging > 0) {
+        // True last resort — every real search round AND the normal
+        // nearest-similar band (40%-250% of target) still couldn't fill
+        // every slot. Rather than an empty "No additional competitor
+        // found" placeholder, make one final honest pass with NO price
+        // ceiling/floor at all (see selectByCompositeScore's
+        // unboundedPriceMode): still a real, correctly-typed, non-own-brand
+        // product (every other gate stays in force), just possibly far
+        // from the target price — nearest_match_reason always states that
+        // gap explicitly, so this is never shown as if it were a close
+        // match. Only when this ALSO can't find enough real distinct
+        // products does a placeholder remain (see its own "honest empty"
+        // reasoning) — a genuinely rare case (the category/tier has fewer
+        // real products than slots), never papered over with invented data.
+        const unusedPool2 = excludeAlreadySelected(enrichedPool, result.competitors);
+        const lastResortPicks = selectByCompositeScore(unusedPool2, targetPriceRaw, "emerging", identityCard, stillShortEmerging, scoringCtx, { nearestSimilarMode: true, allowStaticFallbackTopup: true, unboundedPriceMode: true });
+        result.competitors = [...result.competitors, ...lastResortPicks];
+        stillShortEmerging = 5 - result.competitors.length;
       }
 
       for (let i = 0; i < stillShortEmerging; i++) {
