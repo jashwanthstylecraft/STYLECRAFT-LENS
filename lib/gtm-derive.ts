@@ -160,7 +160,14 @@ export function deriveFieldsFromSources(
   set("material", pick(t.material, "tds"));
   setGroup("top_6_features", (salesKit?.key_features || []).slice(0, 5).map((f: any) => f.headline).filter(Boolean), "sales_kit");
   set("care_directions", pick(t.care_directions, "tds"));
-  set("product_description", pick(t.product_description, "tds"));
+  // Project record outranks TDS per this file's own documented hierarchy
+  // (see header comment), but this previously only ever checked TDS —
+  // confirmed live: a project with a real, team-entered Description and no
+  // TDS document at all left this field with nothing to derive from,
+  // relying entirely on the AI's main call to separately notice
+  // project.description inside <PROJECT_RECORD> and choose to reuse it,
+  // which it doesn't reliably do.
+  set("product_description", firstOf([project.description, "project_record"], [t.product_description, "tds"]));
 
   // Motor — the canonical family (+ branded name in parens, team-entered)
   // outranks TDS's captured specs; a legacy project with no motorFamily
