@@ -18,7 +18,7 @@ import { getUploadedTdsContext, applyUploadedTdsFacts, buildTdsGroundingBlock } 
 import { getReferenceLinksContext, buildReferenceLinksPromptBlock } from "@/lib/gtm-reference-links";
 import { getPredecessorProductContext } from "@/lib/predecessor-product-context";
 import type { GtmSources } from "@/lib/gtm-generate";
-import { buildTier6ExtraInputs, buildHairTypeSourceText } from "@/lib/gtm-generate";
+import { buildTier6ExtraInputs, buildHairTypeSourceText, applyTopFeaturesFallback } from "@/lib/gtm-generate";
 import { applyTier6Inference } from "@/lib/gtm-tier6-inference";
 import { listActiveDocsForProject } from "@/lib/db/uploaded-source-docs";
 import { deriveFactsForDoc } from "@/lib/tds-doc-ingest";
@@ -190,6 +190,7 @@ export async function refillGtmFromSources(projectId: string, orgId: string, use
     await applyFeaturesAndExpertTip(pass0Fields, GTM_FIELD_SCHEMA, sources, project.productName, routeStartTime, voiceBlock, tdsGroundingBlock, matchedCatalogProduct?.description ?? null);
     await applyCollectionKernelAdaptation(pass0Fields, GTM_FIELD_SCHEMA, project.productName, matchedCatalogProduct?.collection ?? null, voiceBlock, tdsGroundingBlock);
     await applyCoreConsumerBothNote(pass0Fields, GTM_FIELD_SCHEMA, project.productName, voiceBlock, tdsGroundingBlock);
+    applyTopFeaturesFallback(pass0Fields, GTM_FIELD_SCHEMA);
 
     for (const schemaField of GTM_FIELD_SCHEMA) {
       const current = fieldsById.get(schemaField.id);

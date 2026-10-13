@@ -468,6 +468,43 @@ export function derivePositioningStatementFallback(companyContext: string | null
   return `${context}${joiner}Key differentiator: ${diff}.`;
 }
 
+// top_6_features_1..5 ("Top Feature #N") are asked of the AI/web tiers as 5
+// INDEPENDENT fields, each needing its own standout claim — for a brand-new
+// pre-launch product with little to no web presence, AI+web commonly finds
+// one or two real claims and then has nothing left to say, leaving the rest
+// "Not found" even though this SAME document's own features_full_list_1..4
+// (a differently-derived but conceptually near-identical "what's a
+// standout feature" group, see lib/gtm-features-and-tip.ts) already has
+// real, already-grounded answers sitting unused. Confirmed live on a real
+// product: 4 real features in features_full_list, 4 empty top_6_features
+// slots, zero cross-pollination between them. Call AFTER whatever resolved
+// features_full_list (Tier 6.5's applyFeaturesAndExpertTip) has already
+// run. Fills only the slots still empty, with whichever already-resolved
+// features_full_list answers aren't obviously already duplicated in a
+// top_6_features slot filled by an earlier tier (a crude substring check,
+// same discipline as derivePositioningStatementFallback's keyDiff dedup
+// above) — never invents a feature, only reuses one this same document
+// already found.
+export function applyTopFeaturesFallback(fields: Record<string, GtmFieldAnswer>, schema: { id: string; group?: { id: string } }[]): void {
+  const topFeatureIds = schema.filter(f => f.group?.id === "top_6_features").map(f => f.id).sort();
+  const emptyTopFeatureIds = topFeatureIds.filter(id => !isRealAnswer(fields[id]?.answer));
+  if (emptyTopFeatureIds.length === 0) return;
+
+  const alreadyUsedLower = topFeatureIds
+    .filter(id => !emptyTopFeatureIds.includes(id))
+    .map(id => (fields[id]?.answer || "").toLowerCase());
+  const featureFullListIds = schema.filter(f => f.group?.id === "features_full_list").map(f => f.id).sort();
+  const reusableFeatures = featureFullListIds
+    .map(id => fields[id]?.answer)
+    .filter((answer): answer is string => isRealAnswer(answer) && !alreadyUsedLower.some(used => used.includes(answer.toLowerCase()) || answer.toLowerCase().includes(used)));
+
+  for (const id of emptyTopFeatureIds) {
+    const next = reusableFeatures.shift();
+    if (!next) break;
+    fields[id] = { answer: next, source: "derived", sourceDetail: { label: "Reused from this document's own Features list" } };
+  }
+}
+
 // Full 77-field generation: AI (if available) -> deterministic derivation
 // floor -> grounding verification -> cross-source consistency check ->
 // anti-boilerplate rewrite pass for written fields.
@@ -672,6 +709,8 @@ export async function generateAllFields(productName: string, sources: GtmSources
       grounded.positioning_statement = { answer: fallback, source: "derived", sourceDetail: { label: "Assembled from the project's own Positioning Context" } };
     }
   }
+
+  applyTopFeaturesFallback(grounded, pipelineSchema);
 
   await guardWrittenFieldsQuality(grounded, pipelineSchema, sources, productName, projectId, pipelineStart, voiceBlock, preLaunchRule);
 
