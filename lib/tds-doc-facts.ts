@@ -84,21 +84,26 @@ ${content.fullText.slice(0, MAX_EXTRACTION_TEXT_CHARS)}
 
 Return ONLY valid JSON: { "facts": [{ "field_id": "...", "value": "...", "raw_text": "..." }] } — omit any field not literally found, never guess a value.`;
 
-  // Confirmed live via production logs: at timeoutMs:30_000,
-  // createResponseWithRetry's own built-in retry-on-timeout (the requested
-  // timeoutMs, then a 2s wait, then one more up-to-10s short retry) let a
-  // single OpenAI attempt consume ~42s worst case — leaving callAiForJson's
-  // Gemini fallback (the thing that's supposed to catch exactly this case)
-  // with no real time left inside the caller's own overall budget, so it
-  // never even got attempted. A smaller timeout here still gives OpenAI a
-  // real shot (worst case ~24s including its own retry) while reserving
-  // genuine time for Gemini afterward — confirmed live that Gemini
-  // routinely completes a similarly-sized extraction in 15-26s.
+  // This used to cap at 12_000ms specifically to leave time for a Gemini
+  // fallback after Claude/OpenAI — stale reasoning: lib/gemini.ts's
+  // hasGeminiKey is now permanently forced false (expired key), so Gemini
+  // is never actually attempted by callAiForJson regardless of how much
+  // budget this leaves it. A 12s cap bought that reserve at the cost of
+  // cutting off Claude/OpenAI before a real, non-trivial document (up to
+  // MAX_EXTRACTION_TEXT_CHARS) reliably finishes — confirmed live as the
+  // actual cause of recurring "fact extraction had an error" reports on
+  // real uploads. Raised to 20s per provider (worst case ~40s for
+  // Claude+OpenAI together, well inside deriveFactsForDoc's own 50s
+  // FACTS_DERIVATION_DEADLINE_MS, still leaving real time for the
+  // narrative-signals sweep that runs after this). OpenAI's own SDK retry-
+  // on-timeout (createResponseWithRetry) can still inflate a single OpenAI
+  // attempt somewhat past the requested timeoutMs — accepted, since the
+  // outer withDeadline in deriveFactsForDoc is the real backstop either way.
   const raw = await callAiForJson<{ facts?: ExtractedFactCandidate[] }>(
     systemInstruction,
     `Product: ${productName}`,
     "TDS-Doc-Fact-Extraction",
-    { timeoutMs: 12_000 }
+    { timeoutMs: 20_000 }
   );
 
   // callAiForJson (lib/ai-json-call.ts) returns null only when EVERY
