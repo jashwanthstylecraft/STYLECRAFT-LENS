@@ -306,11 +306,30 @@ export async function deriveFactsForDoc(documentId: string, projectId: string, p
     ? await withDeadline(extractNarrativeSignals(content, productName), remainingBudget, { candidates: [], aiCallFailed: false })
     : { candidates: [], aiCallFailed: false };
 
-  const allCandidates: { field_id: string; value: string; raw_text: string; source_location?: string; fact_type: "grounded_field" | "narrative_signal"; confidence: "high" | "medium" }[] = [
+  const combinedCandidates: { field_id: string; value: string; raw_text: string; source_location?: string; fact_type: "grounded_field" | "narrative_signal"; confidence: "high" | "medium" }[] = [
     ...deterministicCandidates.map(c => ({ field_id: c.field_id, value: c.value, raw_text: c.raw_text, source_location: c.source_location, fact_type: c.fact_type, confidence: "high" as const })),
     ...candidates.map(c => ({ field_id: c.field_id, value: c.value, raw_text: c.raw_text, source_location: c.source_location, fact_type: "grounded_field" as const, confidence: "medium" as const })),
     ...narrativeResult.candidates.map(c => ({ field_id: c.key, value: c.value, raw_text: c.raw_text, source_location: c.source_location, fact_type: "narrative_signal" as const, confidence: "medium" as const })),
   ];
+
+  // Dedup by field_id before upserting — upsertFacts does ONE bulk upsert
+  // for this whole batch (onConflict: "source_doc_id,field_id"), and
+  // Postgres rejects an upsert batch that targets the same conflict key
+  // twice ("ON CONFLICT DO UPDATE command cannot affect row a second
+  // time") rather than silently taking the last value. A duplicate field_id
+  // can genuinely happen here — the AI spec/narrative sweeps have no
+  // dedup guarantee on their own JSON output (e.g. the same field quoted
+  // from two different places in the document) — confirmed live as the
+  // exact cause of a hard 500 on an otherwise-successful extraction.
+  // Keeps the FIRST occurrence per field_id, which already preserves this
+  // array's own intentional precedence order (deterministic > AI-grounded
+  // > narrative).
+  const seenFieldIds = new Set<string>();
+  const allCandidates = combinedCandidates.filter(c => {
+    if (seenFieldIds.has(c.field_id)) return false;
+    seenFieldIds.add(c.field_id);
+    return true;
+  });
 
   if (allCandidates.length > 0) {
     await upsertFacts(
