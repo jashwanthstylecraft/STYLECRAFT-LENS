@@ -412,7 +412,16 @@ export const GTM_FIELD_SCHEMA: GtmField[] = [
   field("motor_recharge_time", "Motor", "Recharge Time"),
   field("motor_speed", "Motor", "Speed"),
   field("motor_noise_level", "Motor", "Noise level", { uiControl: "select", options: ["Good", "Better", "Best"] }),
-  field("motor_noise_level_db", "Motor", "Noise Level (dB)", { family: "beauty" }),
+  // motor_noise_level_db was previously family: "beauty" on the assumption
+  // only beauty products report a raw dB noise spec — wrong, confirmed via
+  // a real clipper TDS document reporting "NOISE: <=72 dB". Not family-
+  // restricted anymore: it's an internal grounding value for
+  // deriveGoodBetterBestNoise (lib/gtm-tier6-inference.ts) regardless of
+  // family, not just a beauty-workbook export row — the barber workbook's
+  // own step list (lib/gtm-workbook-data-mapper.ts) never referenced this
+  // id in the first place, so this change doesn't add a new barber export
+  // row, it only lets the value actually get captured and used internally.
+  field("motor_noise_level_db", "Motor", "Noise Level (dB)"),
 
   // Heat/Plate Technology — the parallel section for motorless styling
   // tools (flat iron/curling iron/hot brush, see lib/db/tool-types.ts's

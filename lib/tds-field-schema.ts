@@ -44,7 +44,7 @@ const REUSED_GTM_FIELD_IDS = [
   // Tool Description
   "material", "care_directions", "product_description",
   // Motor
-  "motor_type", "motor_rpm", "motor_run_time", "motor_speed",
+  "motor_type", "motor_rpm", "motor_run_time", "motor_speed", "motor_noise_level_db",
   // Heat/Plate Technology
   "plate_material", "heater_type", "max_temp_class",
   // Blades
