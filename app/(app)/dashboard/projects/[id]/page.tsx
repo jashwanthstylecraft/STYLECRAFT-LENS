@@ -833,6 +833,81 @@ function CompetitiveAnalysisTab({ data, editing, localData, setLocalData }: any)
             className="w-full px-3 py-2 border border-border rounded-lg bg-surface-1 text-text-primary outline-none focus:border-accent resize-y"
           />
         </div>
+        <div className="space-y-1 pt-2 border-t border-border/40">
+          <label className="font-semibold text-text-primary">Target Buyer Persona</label>
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              type="text"
+              placeholder="Archetype name"
+              value={localData?.target_buyer_persona?.archetype_name || ""}
+              onChange={e => setLocalData({
+                ...localData,
+                target_buyer_persona: { ...localData?.target_buyer_persona, archetype_name: e.target.value }
+              })}
+              className="w-full px-3 py-2 border border-border rounded-lg bg-surface-1 text-text-primary outline-none focus:border-accent"
+            />
+            <input
+              type="text"
+              placeholder="Age range (e.g. 28-45)"
+              value={localData?.target_buyer_persona?.age_range || ""}
+              onChange={e => setLocalData({
+                ...localData,
+                target_buyer_persona: { ...localData?.target_buyer_persona, age_range: e.target.value }
+              })}
+              className="w-full px-3 py-2 border border-border rounded-lg bg-surface-1 text-text-primary outline-none focus:border-accent"
+            />
+            <input
+              type="text"
+              placeholder="Household income"
+              value={localData?.target_buyer_persona?.household_income || ""}
+              onChange={e => setLocalData({
+                ...localData,
+                target_buyer_persona: { ...localData?.target_buyer_persona, household_income: e.target.value }
+              })}
+              className="w-full px-3 py-2 border border-border rounded-lg bg-surface-1 text-text-primary outline-none focus:border-accent"
+            />
+            <input
+              type="text"
+              placeholder="Life stage"
+              value={localData?.target_buyer_persona?.life_stage || ""}
+              onChange={e => setLocalData({
+                ...localData,
+                target_buyer_persona: { ...localData?.target_buyer_persona, life_stage: e.target.value }
+              })}
+              className="w-full px-3 py-2 border border-border rounded-lg bg-surface-1 text-text-primary outline-none focus:border-accent"
+            />
+            <input
+              type="text"
+              placeholder="Shopping style"
+              value={localData?.target_buyer_persona?.shopping_style || ""}
+              onChange={e => setLocalData({
+                ...localData,
+                target_buyer_persona: { ...localData?.target_buyer_persona, shopping_style: e.target.value }
+              })}
+              className="col-span-2 w-full px-3 py-2 border border-border rounded-lg bg-surface-1 text-text-primary outline-none focus:border-accent"
+            />
+          </div>
+          <input
+            type="text"
+            placeholder="Quote (first-person, short)"
+            value={localData?.target_buyer_persona?.quote || ""}
+            onChange={e => setLocalData({
+              ...localData,
+              target_buyer_persona: { ...localData?.target_buyer_persona, quote: e.target.value }
+            })}
+            className="w-full px-3 py-2 border border-border rounded-lg bg-surface-1 text-text-primary outline-none focus:border-accent"
+          />
+          <textarea
+            rows={2}
+            placeholder="Lifestyle & personality"
+            value={localData?.target_buyer_persona?.lifestyle_and_personality || ""}
+            onChange={e => setLocalData({
+              ...localData,
+              target_buyer_persona: { ...localData?.target_buyer_persona, lifestyle_and_personality: e.target.value }
+            })}
+            className="w-full px-3 py-2 border border-border rounded-lg bg-surface-1 text-text-primary outline-none focus:border-accent resize-y"
+          />
+        </div>
       </MagicBentoCard>
     );
   }
@@ -985,6 +1060,36 @@ function CompetitiveAnalysisTab({ data, editing, localData, setLocalData }: any)
         <h4 className="text-[10px] font-bold text-accent-text uppercase tracking-wider">Positioning Recommendation</h4>
         <p className="text-text-secondary leading-relaxed italic">{data.positioning_recommendation}</p>
       </MagicBentoCard>
+
+      {/* Target Buyer Persona — absent on reports saved before this field existed */}
+      {data.target_buyer_persona && (
+        <MagicBentoCard className="p-4 space-y-3 md:col-span-2" glowColor="99, 102, 241">
+          <h4 className="text-[10px] font-bold text-accent-text uppercase tracking-wider">Target Buyer Persona</h4>
+          <div>
+            <p className="text-sm font-bold text-text-primary">{data.target_buyer_persona.archetype_name}</p>
+            <p className="text-text-secondary italic mt-1">&ldquo;{data.target_buyer_persona.quote}&rdquo;</p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div>
+              <span className="text-[9px] text-text-muted uppercase tracking-wider">Age Range</span>
+              <p className="text-text-secondary">{data.target_buyer_persona.age_range}</p>
+            </div>
+            <div>
+              <span className="text-[9px] text-text-muted uppercase tracking-wider">Household Income</span>
+              <p className="text-text-secondary">{data.target_buyer_persona.household_income}</p>
+            </div>
+            <div>
+              <span className="text-[9px] text-text-muted uppercase tracking-wider">Life Stage</span>
+              <p className="text-text-secondary">{data.target_buyer_persona.life_stage}</p>
+            </div>
+            <div>
+              <span className="text-[9px] text-text-muted uppercase tracking-wider">Shopping Style</span>
+              <p className="text-text-secondary">{data.target_buyer_persona.shopping_style}</p>
+            </div>
+          </div>
+          <p className="text-text-secondary leading-relaxed">{data.target_buyer_persona.lifestyle_and_personality}</p>
+        </MagicBentoCard>
+      )}
     </MagicBentoSection>
   );
 }

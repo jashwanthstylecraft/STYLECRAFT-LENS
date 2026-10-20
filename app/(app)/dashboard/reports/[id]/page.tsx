@@ -429,6 +429,92 @@ export default function ReportDetailPage() {
                 </p>
               ) : null}
             </MagicBentoCard>
+
+            {/* Target Buyer Persona — absent on reports saved before this field existed */}
+            {(editing || ca.target_buyer_persona) && (
+              <MagicBentoCard className="p-5 space-y-3 md:col-span-2">
+                <span className="text-[10px] text-text-muted uppercase tracking-wider block font-semibold">Target Buyer Persona</span>
+                {editing ? (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Archetype name"
+                        value={editData?.target_buyer_persona?.archetype_name ?? ""}
+                        onChange={e => setEditData({ ...editData, target_buyer_persona: { ...editData?.target_buyer_persona, archetype_name: e.target.value } })}
+                        className="w-full px-3 py-2 border border-border rounded-lg bg-surface-1 text-text-primary outline-none focus:border-accent text-xs"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Age range"
+                        value={editData?.target_buyer_persona?.age_range ?? ""}
+                        onChange={e => setEditData({ ...editData, target_buyer_persona: { ...editData?.target_buyer_persona, age_range: e.target.value } })}
+                        className="w-full px-3 py-2 border border-border rounded-lg bg-surface-1 text-text-primary outline-none focus:border-accent text-xs"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Household income"
+                        value={editData?.target_buyer_persona?.household_income ?? ""}
+                        onChange={e => setEditData({ ...editData, target_buyer_persona: { ...editData?.target_buyer_persona, household_income: e.target.value } })}
+                        className="w-full px-3 py-2 border border-border rounded-lg bg-surface-1 text-text-primary outline-none focus:border-accent text-xs"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Life stage"
+                        value={editData?.target_buyer_persona?.life_stage ?? ""}
+                        onChange={e => setEditData({ ...editData, target_buyer_persona: { ...editData?.target_buyer_persona, life_stage: e.target.value } })}
+                        className="w-full px-3 py-2 border border-border rounded-lg bg-surface-1 text-text-primary outline-none focus:border-accent text-xs"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Shopping style"
+                        value={editData?.target_buyer_persona?.shopping_style ?? ""}
+                        onChange={e => setEditData({ ...editData, target_buyer_persona: { ...editData?.target_buyer_persona, shopping_style: e.target.value } })}
+                        className="col-span-2 w-full px-3 py-2 border border-border rounded-lg bg-surface-1 text-text-primary outline-none focus:border-accent text-xs"
+                      />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Quote"
+                      value={editData?.target_buyer_persona?.quote ?? ""}
+                      onChange={e => setEditData({ ...editData, target_buyer_persona: { ...editData?.target_buyer_persona, quote: e.target.value } })}
+                      className="w-full px-3 py-2 border border-border rounded-lg bg-surface-1 text-text-primary outline-none focus:border-accent text-xs"
+                    />
+                    <textarea
+                      rows={3}
+                      placeholder="Lifestyle & personality"
+                      value={editData?.target_buyer_persona?.lifestyle_and_personality ?? ""}
+                      onChange={e => setEditData({ ...editData, target_buyer_persona: { ...editData?.target_buyer_persona, lifestyle_and_personality: e.target.value } })}
+                      className="w-full px-3 py-2 border border-border rounded-lg bg-surface-1 text-text-primary outline-none focus:border-accent text-xs resize-y"
+                    />
+                  </div>
+                ) : (
+                  <div className="bg-surface-3 p-4 border border-border rounded-lg space-y-2">
+                    <p className="font-bold text-text-primary">{ca.target_buyer_persona.archetype_name}</p>
+                    <p className="text-text-secondary italic">&ldquo;{ca.target_buyer_persona.quote}&rdquo;</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-1">
+                      <div>
+                        <span className="text-[9px] text-text-muted uppercase tracking-wider">Age Range</span>
+                        <p className="text-text-secondary">{ca.target_buyer_persona.age_range}</p>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-text-muted uppercase tracking-wider">Household Income</span>
+                        <p className="text-text-secondary">{ca.target_buyer_persona.household_income}</p>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-text-muted uppercase tracking-wider">Life Stage</span>
+                        <p className="text-text-secondary">{ca.target_buyer_persona.life_stage}</p>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-text-muted uppercase tracking-wider">Shopping Style</span>
+                        <p className="text-text-secondary">{ca.target_buyer_persona.shopping_style}</p>
+                      </div>
+                    </div>
+                    <p className="text-text-secondary leading-relaxed">{ca.target_buyer_persona.lifestyle_and_personality}</p>
+                  </div>
+                )}
+              </MagicBentoCard>
+            )}
             </MagicBentoSection>
 
             {/* Mapped Competitors Discovered */}

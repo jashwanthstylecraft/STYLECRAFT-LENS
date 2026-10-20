@@ -107,6 +107,7 @@ ABSOLUTE RULES:
 6. Every factual claim that isn't directly restating the competitor price data already provided above MUST have a matching entry in "citations" with a real URL and a short VERBATIM quote from that page — a quote you paraphrase or invent will fail server-side verification and be discarded. If you cannot find a citable source for a claim, omit the claim rather than stating it uncited.
 7. Do not include analysis of any other product category. Do not reuse boilerplate from previous analyses — every claim must trace to the competitor data or category above.
 8. Any competitor marked NEAREST-MATCH above was included only because no exact-fit competitor could be found — treat it as an adjacent-market reference point, never as a direct rival. Do not build a threat, positioning claim, or price-gap argument primarily around a nearest-match entry; prefer the non-nearest-match competitors for those. It's fine to mention one briefly for context (e.g. "the broader market includes X at $Y"), but never present it as if it directly competes on motor/plate-heat technology or market segment.
+9. target_buyer_persona is a reasoned synthesis of who this specific product (not any competitor) is for, grounded in its category/price point/target market and the competitive landscape above — it is a judgment call like positioning_recommendation, not a factual claim, so it needs no citation. NEVER invent a specific fake individual: no real-sounding full name, no exact single age, no fabricated photo or likeness. Use a descriptive archetype label (e.g. "The Precision-Focused Barber") and an age RANGE, not a specific age. Keep it specific to ${identity.subcategory} at ${ctx.pricePoint ?? "the observed price point"} — never generic boilerplate that could apply to any product in this category.
 ${extraInstruction ? `\n${extraInstruction}\n` : ""}
 Return ONLY valid JSON. No markdown.${voiceBlock}\n${getToneDirective("corporate")}
 This voice/tone guidance NEVER overrides ABSOLUTE RULES 1-8 above — a claim still needs a real citation or it gets omitted, full stop.`;
@@ -154,6 +155,15 @@ Return this exact JSON. The overview_paragraph is already written — copy it ex
     }
   ],
   "positioning_recommendation": "Must name competitors with their real prices. Must state the price gap. Must be specific to ${identity.subcategory} positioning and ${primaryAttribute}.",
+  "target_buyer_persona": {
+    "archetype_name": "Short descriptive label for who THIS product (${ctx.productName}) is for, e.g. 'The Precision-Focused Barber' — never a fake proper name",
+    "quote": "A short first-person line capturing their core want, grounded in this product's real differentiator (${primaryAttribute}) and price point",
+    "age_range": "An age range, e.g. '28-45' — never a single specific age",
+    "household_income": "An income range reasoned from the ${ctx.pricePoint ?? "observed"} price point and ${ctx.targetMarket} target market — not invented precision",
+    "life_stage": "e.g. 'Working professional, building a client base' — grounded in ${ctx.targetMarket}",
+    "shopping_style": "How this buyer researches/shops for ${identity.subcategory} products",
+    "lifestyle_and_personality": "2-3 sentences: what they value, how ${ctx.productName} fits their routine/identity. Specific to this product, not generic category boilerplate."
+  },
   "strategic_recommendations": [
     {
       "priority": "high",

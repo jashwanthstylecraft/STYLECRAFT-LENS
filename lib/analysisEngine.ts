@@ -5274,6 +5274,15 @@ function generateMockPhase3(context: AnalysisContext, identity: IdentityCard, ph
     top_threats: threats,
     top_opportunities: opportunities,
     positioning_recommendation: `We recommend positioning "${context.productName}" as the primary market benchmark at ${context.pricePoint || "target pricing"}, bridging ${context.motorTech || "advanced performance"} with verified reliability. Emphasize key differentiators to stand out against ${leg1.name} and ${em1.name}.`,
+    target_buyer_persona: {
+      archetype_name: `The ${context.motorTech || "Performance-Focused"} Buyer`,
+      quote: `I want ${context.motorTech || "reliable performance"} I can trust at a ${context.pricePoint || "fair"} price.`,
+      age_range: "28-50",
+      household_income: "Not determinable from simulated data",
+      life_stage: context.targetMarket || "Not determinable from simulated data",
+      shopping_style: "Compares specs and reviews before buying",
+      lifestyle_and_personality: `Values ${context.motorTech || "dependable performance"} and is willing to pay ${context.pricePoint || "a fair price"} for a product that holds up to regular use.`
+    },
     strategic_recommendations: recommendations,
     quick_wins: quickWins
   };

@@ -101,6 +101,16 @@ interface ResultsPanelProps {
         description: string;
       }>;
       positioning_recommendation: string;
+      // Absent on analyses run before this field existed — render guarded.
+      target_buyer_persona?: {
+        archetype_name: string;
+        quote: string;
+        age_range: string;
+        household_income: string;
+        life_stage: string;
+        shopping_style: string;
+        lifestyle_and_personality: string;
+      } | null;
       strategic_recommendations: Array<{
         priority: "high" | "medium" | "low";
         category: "product" | "marketing" | "positioning" | "pricing" | "partnerships";
@@ -659,6 +669,39 @@ export function ResultsPanel({ analysis, analysisId, onSaveAsReport, savingRepor
           </h3>
           <p className="text-xs text-text-secondary leading-relaxed">{phase3.positioning_recommendation}</p>
         </div>
+
+        {/* Target Buyer Persona */}
+        {phase3.target_buyer_persona && (
+          <div className="subsection persona-card p-5 border border-accent/30 bg-accent-bg/5 rounded-xl space-y-3">
+            <h3 className="subsection-heading text-xs font-bold text-accent-text uppercase tracking-wider flex items-center gap-1">
+              <UserCheck className="w-4 h-4 text-accent" />
+              <span>Target Buyer Persona</span>
+            </h3>
+            <div>
+              <p className="text-sm font-semibold text-text-primary">{phase3.target_buyer_persona.archetype_name}</p>
+              <p className="text-xs text-text-secondary italic mt-1">&ldquo;{phase3.target_buyer_persona.quote}&rdquo;</p>
+            </div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+              <div>
+                <span className="text-text-muted uppercase tracking-wide text-[10px]">Age Range</span>
+                <p className="text-text-secondary">{phase3.target_buyer_persona.age_range}</p>
+              </div>
+              <div>
+                <span className="text-text-muted uppercase tracking-wide text-[10px]">Household Income</span>
+                <p className="text-text-secondary">{phase3.target_buyer_persona.household_income}</p>
+              </div>
+              <div>
+                <span className="text-text-muted uppercase tracking-wide text-[10px]">Life Stage</span>
+                <p className="text-text-secondary">{phase3.target_buyer_persona.life_stage}</p>
+              </div>
+              <div>
+                <span className="text-text-muted uppercase tracking-wide text-[10px]">Shopping Style</span>
+                <p className="text-text-secondary">{phase3.target_buyer_persona.shopping_style}</p>
+              </div>
+            </div>
+            <p className="text-xs text-text-secondary leading-relaxed">{phase3.target_buyer_persona.lifestyle_and_personality}</p>
+          </div>
+        )}
 
         <CitationsSection claims={phase3.citations || []} />
       </section>
