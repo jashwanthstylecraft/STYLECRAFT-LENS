@@ -104,16 +104,6 @@ export interface ListingStats {
 export interface ReviewAnalysis {
   strengths: ReviewTheme[];
   weaknesses: ReviewTheme[];
-  // "Buyer Profile" — concrete, stated clues about WHO buys/uses this
-  // product (occupation, who it was bought for, a mentioned hobby/
-  // interest, gift context), never inferred from the product category
-  // alone. Same verbatim-quote grounding as strengths/weaknesses, rides
-  // along on whichever tier already ran for those (never triggers an
-  // extra Rainforest call or web search on its own — see analyzeReviews).
-  // Optional for backward compatibility with cached amazon_cache rows
-  // written before this field existed; callers must treat a missing
-  // value the same as an empty array, never throw.
-  buyerPersona?: ReviewTheme[];
   recentSentiment: RecentSentiment | null;
   reviewCountAnalyzed: number;
   dateRange: { earliest: string | null; latest: string | null } | null;
@@ -254,17 +244,15 @@ function buildPrompt(asin: string, productTitle: string, positive: AmazonReview[
   const systemPrompt = `You are analyzing real Amazon customer reviews for ASIN ${asin} (${productTitle}). Using ONLY the review texts provided below in each labeled section — no outside knowledge, no assumptions, no web search:
 
 1. STRENGTHS: recurring positive themes from the POSITIVE REVIEWS section. Each strength must cite at least 2 supporting reviews (a short verbatim quote fragment + that review's date).
-2. WEAKNESSES: recurring complaints from the NEGATIVE REVIEWS section. Same citation rule.
-3. BUYER PERSONA: concrete, explicitly stated clues about WHO is buying or using this product — occupation ("as a barber..."), who it was bought for ("got this for my son who..."), a mentioned hobby/interest, gift context, age/life-stage if stated outright. Search BOTH the positive and negative sections. Never infer a persona from the product category itself (e.g. never assume "barbers" just because it's a clipper) — only report what a reviewer actually said about themselves or the recipient. Same citation rule as above; this will usually be rarer than strengths/weaknesses, so return an empty array when reviews simply don't reveal this.${includeSentiment ? `
-4. RECENT DOMINANT THEMES: recurring themes (positive or negative) specifically from the RECENT REVIEWS (last 90 days) section. Same citation rule — at least 2 supporting reviews per theme.` : ""}
+2. WEAKNESSES: recurring complaints from the NEGATIVE REVIEWS section. Same citation rule.${includeSentiment ? `
+3. RECENT DOMINANT THEMES: recurring themes (positive or negative) specifically from the RECENT REVIEWS (last 90 days) section. Same citation rule — at least 2 supporting reviews per theme.` : ""}
 
 If a section's reviews do not support a claim, do not make it — return an empty array for that section rather than reaching into a different section's reviews. Every quote you cite must be an exact substring of the review text it's attributed to — do not paraphrase inside the quote field.
 
 Return ONLY valid JSON, no markdown:
 {
   "strengths": [{ "theme": "...", "evidence": [{ "quote": "...", "date": "..." }, { "quote": "...", "date": "..." }] }],
-  "weaknesses": [{ "theme": "...", "evidence": [{ "quote": "...", "date": "..." }, { "quote": "...", "date": "..." }] }],
-  "buyerPersona": [{ "theme": "...", "evidence": [{ "quote": "...", "date": "..." }, { "quote": "...", "date": "..." }] }]${includeSentiment ? `,
+  "weaknesses": [{ "theme": "...", "evidence": [{ "quote": "...", "date": "..." }, { "quote": "...", "date": "..." }] }]${includeSentiment ? `,
   "recentDominantThemes": [{ "theme": "...", "evidence": [{ "quote": "...", "date": "..." }, { "quote": "...", "date": "..." }] }]` : ""}
 }`;
 
@@ -411,7 +399,6 @@ Return ONLY valid JSON, no markdown, one entry per quote in order:
 async function resolveWebReviewThemes(productName: string, toolTypes: ToolTypeRow[], requiredToolType?: ToolType | null): Promise<{
   strengths: ReviewTheme[];
   weaknesses: ReviewTheme[];
-  buyerPersona: ReviewTheme[];
   expertReviewCount: number;
   forumCount: number;
   queries: ProvenanceQuery[];
@@ -447,7 +434,6 @@ async function resolveWebReviewThemes(productName: string, toolTypes: ToolTypeRo
 
   const strengths: ReviewTheme[] = [];
   const weaknesses: ReviewTheme[] = [];
-  const buyerPersona: ReviewTheme[] = [];
   let expertReviewCount = 0;
   let forumCount = 0;
 
@@ -459,10 +445,10 @@ async function resolveWebReviewThemes(productName: string, toolTypes: ToolTypeRo
       return;
     }
 
-    const result = await callOpenAiForJson<{ strengths: any[]; weaknesses: any[]; buyerPersona: any[] }>(
-      `From the text below about "${productName}", list recurring strengths and weaknesses mentioned, plus any explicit "Buyer Profile" clues about who buys/uses this product (occupation, who it was bought for, a mentioned hobby/interest, gift context — never inferred from the product category alone). Using ONLY this text — no outside knowledge. Each theme needs at least 2 verbatim quote fragments from the text. If the text isn't really about this product, or doesn't support a theme, omit it. buyerPersona will often be empty — that's expected, don't force it.
+    const result = await callOpenAiForJson<{ strengths: any[]; weaknesses: any[] }>(
+      `From the text below about "${productName}", list recurring strengths and weaknesses mentioned. Using ONLY this text — no outside knowledge. Each theme needs at least 2 verbatim quote fragments from the text. If the text isn't really about this product, or doesn't support a theme, omit it.
 
-Return ONLY valid JSON: { "strengths": [{ "theme": "...", "evidence": [{ "quote": "..." }, { "quote": "..." }] }], "weaknesses": [...], "buyerPersona": [...] }`,
+Return ONLY valid JSON: { "strengths": [{ "theme": "...", "evidence": [{ "quote": "..." }, { "quote": "..." }] }], "weaknesses": [...] }`,
       // Real review content is often preceded by several thousand
       // characters of nav/membership/ad boilerplate — confirmed live
       // against real review pages (lib/key-features-resolver.ts hit the
@@ -493,7 +479,6 @@ Return ONLY valid JSON: { "strengths": [{ "theme": "...", "evidence": [{ "quote"
 
     const s = verify(result.strengths);
     const w = verify(result.weaknesses);
-    const bp = verify(result.buyerPersona);
     logCall("review-tier", { op: `hit:${sourceType}`, outcome: (s.length + w.length) > 0 ? "ok" : "empty", pagesFetched: 1, extractedTextLength: text.length, itemCount: s.length + w.length, elapsedMs: Date.now() - hitT0 });
     if (s.length || w.length) {
       if (sourceType === "expert_review") expertReviewCount++;
@@ -501,7 +486,6 @@ Return ONLY valid JSON: { "strengths": [{ "theme": "...", "evidence": [{ "quote"
     }
     strengths.push(...s);
     weaknesses.push(...w);
-    buyerPersona.push(...bp);
   };
 
   await Promise.all([
@@ -509,7 +493,7 @@ Return ONLY valid JSON: { "strengths": [{ "theme": "...", "evidence": [{ "quote"
     ...forumHits.map(h => processHit(h.url, "forum" as ReviewSourceType)),
   ]);
 
-  return { strengths, weaknesses, buyerPersona, expertReviewCount, forumCount, queries };
+  return { strengths, weaknesses, expertReviewCount, forumCount, queries };
 }
 
 // Masks recentSentiment in a RESPONSE only — never mutates the object
@@ -565,7 +549,6 @@ export async function analyzeReviews(
 
   let strengths: ReviewTheme[] = [];
   let weaknesses: ReviewTheme[] = [];
-  let buyerPersona: ReviewTheme[] = [];
   let recentSentiment: RecentSentiment | null = null;
   let anyAiUnavailable = false;
 
@@ -584,10 +567,6 @@ export async function analyzeReviews(
     } else {
       strengths = verifyThemes(raw.strengths, positive.reviews.length ? positive.reviews : combined, "customer_reviews", tierARejected);
       weaknesses = verifyThemes(raw.weaknesses, negative.reviews.length ? negative.reviews : combined, "customer_reviews", tierARejected);
-      // Buyer Profile can come from either polarity (a reviewer stating who
-      // they bought it for isn't tied to whether they liked it), so this
-      // verifies against the full combined pool rather than one polarity.
-      buyerPersona = verifyThemes(raw.buyerPersona, combined, "customer_reviews", tierARejected);
 
       if (includeSentiment && recent.reviews.length > 0) {
         // Prior-period average — everything NOT in the last-90-days set —
@@ -650,7 +629,6 @@ export async function analyzeReviews(
       } else {
         strengths = [...strengths, ...verifyThemes(raw.strengths, tierBReviews, "amazon_listing", tierBRejected)];
         weaknesses = [...weaknesses, ...verifyThemes(raw.weaknesses, tierBReviews, "amazon_listing", tierBRejected)];
-        buyerPersona = [...buyerPersona, ...verifyThemes(raw.buyerPersona, tierBReviews, "amazon_listing", tierBRejected)];
       }
     }
     tierBOutcome = (strengths.length + weaknesses.length) > 0 ? "success" : "empty";
@@ -679,7 +657,6 @@ export async function analyzeReviews(
     const web = await resolveWebReviewThemes(productTitle, toolTypes, requiredToolType);
     strengths = [...strengths, ...web.strengths];
     weaknesses = [...weaknesses, ...web.weaknesses];
-    buyerPersona = [...buyerPersona, ...web.buyerPersona];
     expertReviewCount = web.expertReviewCount;
     forumCount = web.forumCount;
     tierCQueries = web.queries;
@@ -736,7 +713,6 @@ export async function analyzeReviews(
   return {
     strengths,
     weaknesses,
-    buyerPersona,
     recentSentiment,
     reviewCountAnalyzed: combined.length,
     dateRange,
