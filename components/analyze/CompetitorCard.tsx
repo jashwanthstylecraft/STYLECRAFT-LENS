@@ -493,10 +493,12 @@ export function CompetitorCard({ competitor: c, onFeaturesResolved, analysisId, 
   const [featuresOpen, setFeaturesOpen] = useState(true);
   const [strengthsOpen, setStrengthsOpen] = useState(true);
   const [weaknessesOpen, setWeaknessesOpen] = useState(true);
+  const [buyerPersonaOpen, setBuyerPersonaOpen] = useState(true);
   const [newsOpen, setNewsOpen] = useState(true);
   const [featuresSourceOpen, setFeaturesSourceOpen] = useState(false);
   const [strengthsSourceOpen, setStrengthsSourceOpen] = useState(false);
   const [weaknessesSourceOpen, setWeaknessesSourceOpen] = useState(false);
+  const [buyerPersonaSourceOpen, setBuyerPersonaSourceOpen] = useState(false);
   const [newsSourceOpen, setNewsSourceOpen] = useState(false);
 
   const [featuresState, setFeaturesState] = useState<FeaturesState>({ status: "loading" });
@@ -732,6 +734,7 @@ export function CompetitorCard({ competitor: c, onFeaturesResolved, analysisId, 
   const featuresCitations = useCitationNumbering();
   const strengthsCitations = useCitationNumbering();
   const weaknessesCitations = useCitationNumbering();
+  const buyerPersonaCitations = useCitationNumbering();
   const newsCitations = useCitationNumbering();
 
   function sourceFor(numbering: ReturnType<typeof useCitationNumbering>, url: string | null | undefined, title: string, quote: string, retrievedAt: string) {
@@ -1325,6 +1328,75 @@ export function CompetitorCard({ competitor: c, onFeaturesResolved, analysisId, 
                   {reviewAnalysis.data.sourcesSummary.forumDiscussions > 0 && ` + ${reviewAnalysis.data.sourcesSummary.forumDiscussions} forum discussions`}
                 </p>
                 <SourcesFootnoteList sources={strengthsCitations.allSources().map((url, i) => ({ number: i + 1, url, title: domainLabel(url), publisher: domainLabel(url), quote: "", retrievedAt: reviewAnalysis.data.retrievedAt }))} />
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ==================== SECTION 2b: BUYER PROFILE ==================== */}
+      <div className="border-t border-border/40 pt-3">
+        <div className="w-full flex items-center justify-between text-text-muted">
+          <button type="button" onClick={() => setBuyerPersonaOpen(!buyerPersonaOpen)} className="flex-1 flex items-center justify-between hover:text-text-primary transition-colors font-semibold text-left">
+            <span>Buyer Profile</span>
+            {buyerPersonaOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+          {reviewAnalysis.status === "loaded" && <RefreshButton onClick={() => loadReviewAnalysis(true)} />}
+        </div>
+
+        {reviewAnalysis.status === "loaded" && (
+          assertProvenance(reviewAnalysis.data.provenance, "reviews", c.name) ? (
+            <SectionSourceLine
+              flavor="reviews"
+              provenance={reviewAnalysis.data.provenance!}
+              resolvedAt={reviewAnalysis.data.retrievedAt}
+              asin={isValidAsin ? c.asin : null}
+              open={buyerPersonaSourceOpen}
+              onToggle={() => setBuyerPersonaSourceOpen(o => !o)}
+            />
+          ) : <SourceUnavailableCaption />
+        )}
+
+        {buyerPersonaOpen && (
+          <div className="mt-3 space-y-2.5 animate-slide-down">
+            {reviewAnalysis.status === "idle" && (
+              <button
+                type="button"
+                onClick={() => loadReviewAnalysis()}
+                className="px-3 py-1.5 text-[11px] font-semibold bg-accent hover:bg-accent-hover text-white rounded-lg transition-colors"
+              >
+                Analyze reviews
+              </button>
+            )}
+            {reviewAnalysis.status === "loading" && <SkeletonRows count={2} />}
+            {reviewAnalysis.status === "error" && (
+              <div className="flex items-center justify-between gap-2 p-2 bg-danger-bg border border-danger/20 rounded-lg">
+                <span className="text-danger">{reviewAnalysis.message}</span>
+                <TimeoutChip onRetry={() => loadReviewAnalysis()} />
+              </div>
+            )}
+            {/* No ReviewSourcesNotice here — an empty Buyer Profile on its own
+                is expected (persona-revealing reviews are inherently rarer
+                than strength/weakness ones) and must never be presented as
+                an error state; the Strengths section above already surfaces
+                aiUnavailable/sourcesUnavailable/insufficientData for the
+                whole reviewAnalysis payload. */}
+            {reviewAnalysis.status === "loaded" && !reviewAnalysis.data.insufficientData && !reviewAnalysis.data.sourcesUnavailable && !reviewAnalysis.data.aiUnavailable && (
+              <>
+                {(reviewAnalysis.data.buyerPersona || []).length === 0 && <p className="italic text-text-muted">None with verified support.</p>}
+                {(reviewAnalysis.data.buyerPersona || []).map((p, idx) => (
+                  <div key={idx} className="space-y-1">
+                    <p className="text-text-primary font-semibold flex items-center flex-wrap gap-1">
+                      {p.theme}
+                      <CitationMarker source={sourceFor(buyerPersonaCitations, p.sourceUrl, reviewSourceLabel(p.sourceType) || p.evidence[0]?.quote?.slice(0, 40) || "Source", p.evidence[0]?.quote || "", reviewAnalysis.data.retrievedAt)} />
+                      <span className="text-[9px] font-normal text-text-muted">[{reviewThemeSourceLabel(p)}]</span>
+                    </p>
+                    {p.evidence.slice(0, 2).map((e, i) => <EvidenceQuote key={i} evidence={e} />)}
+                  </div>
+                ))}
+                {(reviewAnalysis.data.buyerPersona || []).length > 0 && (
+                  <SourcesFootnoteList sources={buyerPersonaCitations.allSources().map((url, i) => ({ number: i + 1, url, title: domainLabel(url), publisher: domainLabel(url), quote: "", retrievedAt: reviewAnalysis.data.retrievedAt }))} />
+                )}
               </>
             )}
           </div>
