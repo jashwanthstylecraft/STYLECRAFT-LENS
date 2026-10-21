@@ -47,6 +47,31 @@ function makeToolTypesFixture(): any[] {
 }
 const TOOL_TYPES = makeToolTypesFixture();
 
+// Mirrors lib/memoryDb.ts's seedGroomingGateRuleDefaults exactly (the real
+// production default rule set) — filterCandidatesByCategoryAndIdentity's
+// grooming-gate check is fail-closed, so passing [] here (the default when
+// this argument is omitted) would reject every candidate outright, not
+// just the genuinely bad ones this script means to test.
+function makeGroomingGateRulesFixture(): any[] {
+  const now = new Date().toISOString();
+  const defs: { ruleType: string; value: string; label?: string }[] = [
+    ...["Beauty & Personal Care", "Hair Care", "Hair Cutting Tools", "Hair Clippers", "Hair Trimmers", "Shave & Hair Removal", "Electric Shavers", "Men's Grooming", "Hair Dryers", "Hair Styling Tools", "Flat Irons", "Curling Irons", "Tools & Accessories"].map(v => ({ ruleType: "allow_category_segment", value: v })),
+    ...["Patio, Lawn & Garden", "Tools & Home Improvement", "Power & Hand Tools", "Outdoor Power Tools", "Automotive", "Kitchen & Dining", "Appliances", "Industrial & Scientific", "Pet Supplies", "Toys & Games", "Sports & Outdoors", "Garden", "Lawn Mowers", "String Trimmers", "Weed Trimmers", "Hedge Trimmers", "Brush Cutters", "Drills", "Saws"].map(v => ({ ruleType: "block_category_segment", value: v })),
+    ...["hair", "clipper", "trimmer", "shaver", "foil", "beard", "barber", "grooming", "haircut", "dryer", "hair dryer", "blow dryer", "flat iron", "curling", "styling", "razor", "edger", "lining", "fade"].map(v => ({ ruleType: "required_keyword", value: v })),
+    ...["weed", "grass", "lawn", "garden", "hedge", "string trimmer", "brush cutter", "wacker", "whacker", "drill", "saw", "sander", "tire", "engine", "kitchen", "blender", "vacuum", "wood", "metal cutting", "automotive"].map(v => ({ ruleType: "disqualifying_keyword", value: v })),
+    ...["dog grooming", "pet grooming", "animal grooming"].map(v => ({ ruleType: "disqualifying_keyword", value: v, label: "Skipped when our own product is pet grooming" })),
+    ...["beard", "hair", "barber", "body", "mustache", "ear", "nose"].map(v => ({ ruleType: "trimmer_cosignal_keyword", value: v })),
+    ...["brushless motor", "dc motor", "outrunner motor", "motor kit", "replacement motor", "esc", "propeller", "stator", "armature", "dynamo", "gear motor", "servo motor"].map(v => ({ ruleType: "component_disqualifier", value: v })),
+    ...["surfboard", "efoil", "drone", "rc car", "boat", "underwater", "marine", "thruster", "lawn mower"].map(v => ({ ruleType: "cross_domain_use_phrase", value: v })),
+    { ruleType: "confidence_threshold", value: "0.4", label: "Minimum same-tool-kind confidence to survive the gate" },
+  ];
+  return defs.map((d, i) => ({
+    id: `ggrule_${i}`, rule_type: d.ruleType, value: d.value, label: d.label ?? null,
+    enabled: true, sort_order: i, created_at: now, updated_at: now,
+  }));
+}
+const GROOMING_GATE_RULES = makeGroomingGateRulesFixture();
+
 function makeIdentity(category: string, subcategory: string, productName = "Test Product", toolType: string = "dryer"): any {
   return {
     productName,
@@ -119,7 +144,7 @@ async function main() {
     { name: "BaByliss Curling Iron Wand", top_feature_summary: "curling iron", asin: "B0000000AA", price: "$40.00" }, // wrong tool type — must be rejected
     { name: "Conair InfinitiPRO Dryer", top_feature_summary: "hair dryer", asin: "B000E0L3C0", amazon_url: "https://www.amazon.com/dp/B000E0L3C0", price: "$39.99" },
   ];
-  const filtered = filterCandidatesByCategoryAndIdentity(rawCandidates, "legacy", identity, TOOL_TYPES);
+  const filtered = filterCandidatesByCategoryAndIdentity(rawCandidates, "legacy", identity, TOOL_TYPES, GROOMING_GATE_RULES);
   assert(filtered.length === 2, `filter kept exactly the 2 real, correctly-categorized, non-self-named candidates (got ${filtered.length})`);
   assert(filtered.every((c: any) => c.name !== "Acme Turbo Dryer 3000 Pro Clone"), "candidate named after the analyzed product itself was rejected");
   assert(filtered.every((c: any) => c.name !== "BaByliss Curling Iron Wand"), "wrong-tool-type candidate was rejected");

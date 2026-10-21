@@ -605,7 +605,18 @@ export default function AnalyzePage() {
     setRegeneratingSynthesis(true);
     try {
       const res = await fetch(`/api/analyses/${analysisId}/regenerate-synthesis`, { method: "POST" });
-      const data = await res.json();
+      // A hard Vercel function kill returns a plain-text/HTML platform error
+      // page, not this route's own JSON — a raw res.json() call crashes on
+      // that with a confusing "Unexpected token 'A', "An error o"... is not
+      // valid JSON" shown straight to the user (same bug already fixed in
+      // ProgressPanel.tsx's fetchJson / CompetitorCard.tsx's safeJson).
+      const text = await res.text();
+      let data: any;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { message: res.ok ? "Unexpected response — try again" : "Server error — try again" };
+      }
       if (!res.ok) throw new Error(data.message || "Failed to start synthesis regeneration");
       setViewState("running");
     } catch (err: any) {

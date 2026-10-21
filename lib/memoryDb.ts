@@ -1109,8 +1109,13 @@ class MemoryDatabase {
       ...["Beauty & Personal Care", "Hair Care", "Hair Cutting Tools", "Hair Clippers", "Hair Trimmers", "Shave & Hair Removal", "Electric Shavers", "Men's Grooming", "Hair Dryers", "Hair Styling Tools", "Flat Irons", "Curling Irons", "Tools & Accessories"].map(v => ({ ruleType: "allow_category_segment", value: v })),
       // Negative category signals (never a grooming/beauty product)
       ...["Patio, Lawn & Garden", "Tools & Home Improvement", "Power & Hand Tools", "Outdoor Power Tools", "Automotive", "Kitchen & Dining", "Appliances", "Industrial & Scientific", "Pet Supplies", "Toys & Games", "Sports & Outdoors", "Garden", "Lawn Mowers", "String Trimmers", "Weed Trimmers", "Hedge Trimmers", "Brush Cutters", "Drills", "Saws"].map(v => ({ ruleType: "block_category_segment", value: v })),
-      // Required product-type keywords (title/description must contain at least one)
-      ...["hair", "clipper", "trimmer", "shaver", "foil", "beard", "barber", "grooming", "haircut", "hair dryer", "blow dryer", "flat iron", "curling", "styling", "razor", "edger", "lining", "fade"].map(v => ({ ruleType: "required_keyword", value: v })),
+      // Required product-type keywords (title/description must contain at least one).
+      // "dryer" (bare, alongside the existing "hair dryer"/"blow dryer" phrases)
+      // covers real Amazon titles like "Conair InfinitiPRO Dryer" that never
+      // spell out "hair" — consistent with the "dryer" tool type's own alias
+      // list (lib/db/tool-types.ts's seed) already treating bare "dryer" as
+      // sufficient evidence.
+      ...["hair", "clipper", "trimmer", "shaver", "foil", "beard", "barber", "grooming", "haircut", "dryer", "hair dryer", "blow dryer", "flat iron", "curling", "styling", "razor", "edger", "lining", "fade"].map(v => ({ ruleType: "required_keyword", value: v })),
       // Disqualifying keywords (any hit rejects, unless our product is itself pet-grooming for the pet/dog/animal ones)
       ...["weed", "grass", "lawn", "garden", "hedge", "string trimmer", "brush cutter", "wacker", "whacker", "drill", "saw", "sander", "tire", "engine", "kitchen", "blender", "vacuum", "wood", "metal cutting", "automotive"].map(v => ({ ruleType: "disqualifying_keyword", value: v })),
       ...["dog grooming", "pet grooming", "animal grooming"].map(v => ({ ruleType: "disqualifying_keyword", value: v, label: "Skipped when our own product is pet grooming" })),

@@ -2091,3 +2091,16 @@ ALTER TABLE projects ADD COLUMN IF NOT EXISTS reference_urls JSONB NOT NULL DEFA
 -- a StyleCraft catalog match, then an Amazon ASIN/URL or any other product
 -- page. Plain text, not a URL type — it may be a product name, not a link.
 ALTER TABLE projects ADD COLUMN IF NOT EXISTS predecessor_ref VARCHAR(500);
+
+-- 60. GROOMING GATE: ADD BARE "dryer" REQUIRED KEYWORD — Section 56's
+-- required_keyword list had "hair dryer"/"blow dryer" but not bare "dryer",
+-- so a real Amazon title that never spells out "hair" (e.g. "Conair
+-- InfinitiPRO Dryer") was wrongly rejected by passesGroomingIndustryGate's
+-- 1B check at the pre-enrichment stage (no category data yet to fall back
+-- on). Bare "dryer" is consistent with the "dryer" tool type's own alias
+-- list already treating it as sufficient evidence. Mirrors
+-- lib/memoryDb.ts's seedGroomingGateRuleDefaults(). Idempotent via Section
+-- 56's unique index on (rule_type, value).
+INSERT INTO grooming_gate_rules (rule_type, value, label) VALUES
+    ('required_keyword', 'dryer', NULL)
+ON CONFLICT (rule_type, value) DO NOTHING;
