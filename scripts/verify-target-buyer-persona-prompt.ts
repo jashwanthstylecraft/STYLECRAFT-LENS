@@ -52,6 +52,11 @@ async function main() {
   assert(userPrompt.includes("life_stage"), "schema includes life_stage");
   assert(userPrompt.includes("shopping_style"), "schema includes shopping_style");
   assert(userPrompt.includes("lifestyle_and_personality"), "schema includes lifestyle_and_personality");
+  assert(userPrompt.includes("pain_points"), "schema includes pain_points");
+  assert(userPrompt.includes("objections"), "schema includes objections");
+  assert(userPrompt.includes("purchase_triggers"), "schema includes purchase_triggers");
+  assert(userPrompt.includes("messaging_that_resonates"), "schema includes messaging_that_resonates");
+  assert(userPrompt.includes("preferred_channels"), "schema includes preferred_channels");
 
   console.log("\n[2] it's grounded in THIS product, not phrased as per-competitor");
   assert(userPrompt.includes("Arbitrage Clipper"), "schema references our own product name for grounding");
@@ -60,6 +65,7 @@ async function main() {
   assert(systemPrompt.includes("NEVER invent a specific fake individual"), "system prompt forbids inventing a specific person");
   assert(systemPrompt.includes("age RANGE"), "system prompt requires an age range, not a single age");
   assert(!systemPrompt.toLowerCase().includes("per-competitor") && !systemPrompt.toLowerCase().includes("per competitor"), "not framed as per-competitor (that version was reverted)");
+  assert(systemPrompt.includes("never a fabricated statistic or invented percentage"), "system prompt forbids fabricated stats in the deeper fields (e.g. no fake '73% likely to buy')");
 
   console.log(`\n${passes} passed, ${failures} failed`);
   if (failures > 0) process.exit(1);

@@ -5281,7 +5281,12 @@ function generateMockPhase3(context: AnalysisContext, identity: IdentityCard, ph
       household_income: "Not determinable from simulated data",
       life_stage: context.targetMarket || "Not determinable from simulated data",
       shopping_style: "Compares specs and reviews before buying",
-      lifestyle_and_personality: `Values ${context.motorTech || "dependable performance"} and is willing to pay ${context.pricePoint || "a fair price"} for a product that holds up to regular use.`
+      lifestyle_and_personality: `Values ${context.motorTech || "dependable performance"} and is willing to pay ${context.pricePoint || "a fair price"} for a product that holds up to regular use.`,
+      pain_points: "Not determinable from simulated data",
+      objections: "Not determinable from simulated data",
+      purchase_triggers: "Not determinable from simulated data",
+      messaging_that_resonates: "Not determinable from simulated data",
+      preferred_channels: "Not determinable from simulated data"
     },
     strategic_recommendations: recommendations,
     quick_wins: quickWins

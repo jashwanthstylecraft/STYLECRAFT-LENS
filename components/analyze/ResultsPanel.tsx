@@ -110,6 +110,12 @@ interface ResultsPanelProps {
         life_stage: string;
         shopping_style: string;
         lifestyle_and_personality: string;
+        // Absent on analyses run before this deeper set existed — render guarded.
+        pain_points?: string;
+        objections?: string;
+        purchase_triggers?: string;
+        messaging_that_resonates?: string;
+        preferred_channels?: string;
       } | null;
       strategic_recommendations: Array<{
         priority: "high" | "medium" | "low";
@@ -700,6 +706,40 @@ export function ResultsPanel({ analysis, analysisId, onSaveAsReport, savingRepor
               </div>
             </div>
             <p className="text-xs text-text-secondary leading-relaxed">{phase3.target_buyer_persona.lifestyle_and_personality}</p>
+            {(phase3.target_buyer_persona.pain_points || phase3.target_buyer_persona.objections || phase3.target_buyer_persona.purchase_triggers || phase3.target_buyer_persona.messaging_that_resonates || phase3.target_buyer_persona.preferred_channels) && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-border/40 text-xs">
+                {phase3.target_buyer_persona.pain_points && (
+                  <div>
+                    <span className="text-text-muted uppercase tracking-wide text-[10px]">Pain Points</span>
+                    <p className="text-text-secondary">{phase3.target_buyer_persona.pain_points}</p>
+                  </div>
+                )}
+                {phase3.target_buyer_persona.objections && (
+                  <div>
+                    <span className="text-text-muted uppercase tracking-wide text-[10px]">Objections</span>
+                    <p className="text-text-secondary">{phase3.target_buyer_persona.objections}</p>
+                  </div>
+                )}
+                {phase3.target_buyer_persona.purchase_triggers && (
+                  <div>
+                    <span className="text-text-muted uppercase tracking-wide text-[10px]">Purchase Triggers</span>
+                    <p className="text-text-secondary">{phase3.target_buyer_persona.purchase_triggers}</p>
+                  </div>
+                )}
+                {phase3.target_buyer_persona.messaging_that_resonates && (
+                  <div>
+                    <span className="text-text-muted uppercase tracking-wide text-[10px]">Messaging That Resonates</span>
+                    <p className="text-text-secondary">{phase3.target_buyer_persona.messaging_that_resonates}</p>
+                  </div>
+                )}
+                {phase3.target_buyer_persona.preferred_channels && (
+                  <div className="sm:col-span-2">
+                    <span className="text-text-muted uppercase tracking-wide text-[10px]">Preferred Channels</span>
+                    <p className="text-text-secondary">{phase3.target_buyer_persona.preferred_channels}</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 

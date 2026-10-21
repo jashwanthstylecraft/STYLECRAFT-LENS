@@ -907,6 +907,58 @@ function CompetitiveAnalysisTab({ data, editing, localData, setLocalData }: any)
             })}
             className="w-full px-3 py-2 border border-border rounded-lg bg-surface-1 text-text-primary outline-none focus:border-accent resize-y"
           />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-border/40">
+            <textarea
+              rows={2}
+              placeholder="Pain points"
+              value={localData?.target_buyer_persona?.pain_points || ""}
+              onChange={e => setLocalData({
+                ...localData,
+                target_buyer_persona: { ...localData?.target_buyer_persona, pain_points: e.target.value }
+              })}
+              className="w-full px-3 py-2 border border-border rounded-lg bg-surface-1 text-text-primary outline-none focus:border-accent resize-y"
+            />
+            <textarea
+              rows={2}
+              placeholder="Objections"
+              value={localData?.target_buyer_persona?.objections || ""}
+              onChange={e => setLocalData({
+                ...localData,
+                target_buyer_persona: { ...localData?.target_buyer_persona, objections: e.target.value }
+              })}
+              className="w-full px-3 py-2 border border-border rounded-lg bg-surface-1 text-text-primary outline-none focus:border-accent resize-y"
+            />
+            <textarea
+              rows={2}
+              placeholder="Purchase triggers"
+              value={localData?.target_buyer_persona?.purchase_triggers || ""}
+              onChange={e => setLocalData({
+                ...localData,
+                target_buyer_persona: { ...localData?.target_buyer_persona, purchase_triggers: e.target.value }
+              })}
+              className="w-full px-3 py-2 border border-border rounded-lg bg-surface-1 text-text-primary outline-none focus:border-accent resize-y"
+            />
+            <textarea
+              rows={2}
+              placeholder="Messaging that resonates"
+              value={localData?.target_buyer_persona?.messaging_that_resonates || ""}
+              onChange={e => setLocalData({
+                ...localData,
+                target_buyer_persona: { ...localData?.target_buyer_persona, messaging_that_resonates: e.target.value }
+              })}
+              className="w-full px-3 py-2 border border-border rounded-lg bg-surface-1 text-text-primary outline-none focus:border-accent resize-y"
+            />
+            <input
+              type="text"
+              placeholder="Preferred channels"
+              value={localData?.target_buyer_persona?.preferred_channels || ""}
+              onChange={e => setLocalData({
+                ...localData,
+                target_buyer_persona: { ...localData?.target_buyer_persona, preferred_channels: e.target.value }
+              })}
+              className="sm:col-span-2 w-full px-3 py-2 border border-border rounded-lg bg-surface-1 text-text-primary outline-none focus:border-accent"
+            />
+          </div>
         </div>
       </MagicBentoCard>
     );
@@ -1088,6 +1140,40 @@ function CompetitiveAnalysisTab({ data, editing, localData, setLocalData }: any)
             </div>
           </div>
           <p className="text-text-secondary leading-relaxed">{data.target_buyer_persona.lifestyle_and_personality}</p>
+          {(data.target_buyer_persona.pain_points || data.target_buyer_persona.objections || data.target_buyer_persona.purchase_triggers || data.target_buyer_persona.messaging_that_resonates || data.target_buyer_persona.preferred_channels) && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-border/40">
+              {data.target_buyer_persona.pain_points && (
+                <div>
+                  <span className="text-[9px] text-text-muted uppercase tracking-wider">Pain Points</span>
+                  <p className="text-text-secondary">{data.target_buyer_persona.pain_points}</p>
+                </div>
+              )}
+              {data.target_buyer_persona.objections && (
+                <div>
+                  <span className="text-[9px] text-text-muted uppercase tracking-wider">Objections</span>
+                  <p className="text-text-secondary">{data.target_buyer_persona.objections}</p>
+                </div>
+              )}
+              {data.target_buyer_persona.purchase_triggers && (
+                <div>
+                  <span className="text-[9px] text-text-muted uppercase tracking-wider">Purchase Triggers</span>
+                  <p className="text-text-secondary">{data.target_buyer_persona.purchase_triggers}</p>
+                </div>
+              )}
+              {data.target_buyer_persona.messaging_that_resonates && (
+                <div>
+                  <span className="text-[9px] text-text-muted uppercase tracking-wider">Messaging That Resonates</span>
+                  <p className="text-text-secondary">{data.target_buyer_persona.messaging_that_resonates}</p>
+                </div>
+              )}
+              {data.target_buyer_persona.preferred_channels && (
+                <div className="sm:col-span-2">
+                  <span className="text-[9px] text-text-muted uppercase tracking-wider">Preferred Channels</span>
+                  <p className="text-text-secondary">{data.target_buyer_persona.preferred_channels}</p>
+                </div>
+              )}
+            </div>
+          )}
         </MagicBentoCard>
       )}
     </MagicBentoSection>
